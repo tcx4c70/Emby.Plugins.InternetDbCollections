@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emby.Plugins.InternetDbCollections", "src\Emby.Plugins.InternetDbCollections.csproj", "{DC9D619F-3BB3-405D-8E65-D478484642DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

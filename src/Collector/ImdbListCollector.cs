@@ -20,6 +20,8 @@ class ImdbListCollector : ImdbCollector
     {
     }
 
+    public override string Name => $"IMDb List: {_name ?? _id}";
+
     public override async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         using var client = new HttpClient();

@@ -31,6 +31,8 @@ abstract class ImdbCollector : ICollector
         _libraryManager = libraryManager;
     }
 
+    public abstract string Name { get; }
+
     public abstract Task InitializeAsync(CancellationToken cancellationToken = default);
 
     public async Task UpdateMetadataAsync(IProgress<double> progress, CancellationToken cancellationToken = default)

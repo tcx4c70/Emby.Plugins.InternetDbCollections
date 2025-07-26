@@ -24,6 +24,8 @@ class ImdbChartCollector : ImdbCollector
     {
     }
 
+    public override string Name => $"IMDb Chart: {_name ?? _id}";
+
     public override async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         // TODO:

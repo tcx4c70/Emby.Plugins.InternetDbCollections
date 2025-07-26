@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 interface ICollector
 {
     /// <summary>
+    /// The name of the collector.
+    /// </summary>
+    public string Name { get; }
+
+    /// <summary>
     /// Initializes the collector.
     /// This method must be called once at the start of the collection process. It should set up any necessary resources
     /// or state (e.g., scrape from the internet database to initialize name, description, and metadata).

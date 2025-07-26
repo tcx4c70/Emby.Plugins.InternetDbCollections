@@ -48,6 +48,7 @@ class CollectInternetDbTask : IScheduledTask
         yield return new TaskTriggerInfo
         {
             Type = TaskTriggerInfo.TriggerWeekly,
+            DayOfWeek = DayOfWeek.Sunday,
             TimeOfDayTicks = TimeSpan.FromHours(3).Ticks,
         };
     }

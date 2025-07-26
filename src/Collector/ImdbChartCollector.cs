@@ -59,10 +59,12 @@ class ImdbChartCollector : ICollector
         var titleStartIdx = response.IndexOf(s_titleBeginTag) + s_titleBeginTag.Length;
         var titleEndIdx = response.IndexOf(s_titleEndTag, titleStartIdx);
         _chartName = response[titleStartIdx..titleEndIdx].Trim();
+        _logger.Info("Parsed IMDb chart '{0}' name: {1}", _chartId, _chartName);
 
         var descriptionStartIdx = response.IndexOf(s_descriptionBeginTag) + s_descriptionBeginTag.Length;
         var descriptionEndIdx = response.IndexOf(s_descriptionEndTag, descriptionStartIdx);
         _chartDescription = response[descriptionStartIdx..descriptionEndIdx].Trim();
+        _logger.Info("Parsed IMDb chart '{0}' description: {1}", _chartId, _chartDescription);
 
         var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;
         var dataEndIdx = response.IndexOf(s_jsonDataEndTag, dataStartIdx);
@@ -75,7 +77,7 @@ class ImdbChartCollector : ICollector
             .ToDictionary(
                 item => item.Key,
                 item => item.Value);
-        _logger.Debug("Parsed {0} IMDb chart '{1}' items", _chartItems.Count, _chartId);
+        _logger.Info("Parsed IMDb chart '{0}' items: {1} items", _chartId, _chartItems.Count);
     }
 
     public async Task UpdateMetadataAsync(IProgress<double> progress, CancellationToken cancellationToken = default)

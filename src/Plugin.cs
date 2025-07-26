@@ -1,15 +1,19 @@
 namespace Emby.Plugins.InternetDbCollections;
 
+using Emby.Plugins.InternetDbCollections.Configuration;
+using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Serialization;
 using System;
 
-public class Plugin : BasePlugin
+public class Plugin : BasePlugin<PluginConfiguration>
 {
     public static Plugin Instance { get; private set; }
 
     private readonly Guid _id = new("1B55EFD5-6080-4207-BCF8-DC2723C7AC10");
 
-    public Plugin()
+    public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
+        : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
     }

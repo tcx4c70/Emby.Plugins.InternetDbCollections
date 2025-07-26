@@ -40,6 +40,7 @@ class CollectInternetDbTask : IScheduledTask
         {
             new ImdbChartCollector("top", _logger, _libraryManager),
             new ImdbChartCollector("toptv", _logger, _libraryManager),
+            new ImdbListCollector("ls055592025", _logger, _libraryManager),
         };
 
         double step = 100.0 / collectors.Count;

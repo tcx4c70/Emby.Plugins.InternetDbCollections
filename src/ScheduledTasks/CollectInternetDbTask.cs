@@ -1,5 +1,6 @@
 namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
+using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
@@ -35,9 +36,19 @@ class CollectInternetDbTask : IScheduledTask
         _logger.Info("Start task {0}", Name);
         progress?.Report(0.0);
 
-        var imdbTop250 = new ImdbTop250(_logger, _libraryManager);
-        await imdbTop250.InitializeAsync(cancellationToken);
-        await imdbTop250.UpdateTagsAsync(progress, cancellationToken);
+        List<ICollector> collectors = new()
+        {
+            new ImdbChartCollector("top", _logger, _libraryManager),
+        };
+
+        double step = 100.0 / collectors.Count;
+        double currentProgress = 0.0;
+        foreach (var collector in collectors)
+        {
+            await collector.InitializeAsync(cancellationToken);
+            await collector.UpdateMetadataAsync(new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+            currentProgress += step;
+        }
 
         _logger.Info("Finish Task {0}", Name);
         progress?.Report(100.0);

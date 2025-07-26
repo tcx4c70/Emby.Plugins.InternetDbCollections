@@ -36,19 +36,21 @@ class CollectInternetDbTask : IScheduledTask
         _logger.Info("Start task {0}", Name);
         progress?.Report(0.0);
 
-        List<ICollector> collectors = new()
-        {
-            new ImdbChartCollector("top", _logger, _libraryManager),
-            new ImdbChartCollector("toptv", _logger, _libraryManager),
-            new ImdbListCollector("ls055592025", _logger, _libraryManager),
-        };
-
+        var collectors = BuildCollectors();
         double step = 100.0 / collectors.Count;
         double currentProgress = 0.0;
         foreach (var collector in collectors)
         {
-            await collector.InitializeAsync(cancellationToken);
-            await collector.UpdateMetadataAsync(new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+            try
+            {
+                await collector.InitializeAsync(cancellationToken);
+                await collector.UpdateMetadataAsync(new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error while executing collector `{0}`: {1}", collector.Name, ex.Message);
+            }
+
             currentProgress += step;
         }
 
@@ -63,6 +65,16 @@ class CollectInternetDbTask : IScheduledTask
             Type = TaskTriggerInfo.TriggerWeekly,
             DayOfWeek = DayOfWeek.Sunday,
             TimeOfDayTicks = TimeSpan.FromHours(3).Ticks,
+        };
+    }
+
+    private List<ICollector> BuildCollectors()
+    {
+        return new List<ICollector>
+        {
+            new ImdbChartCollector("top", _logger, _libraryManager),
+            new ImdbChartCollector("toptv", _logger, _libraryManager),
+            new ImdbListCollector("ls055592025", _logger, _libraryManager),
         };
     }
 }

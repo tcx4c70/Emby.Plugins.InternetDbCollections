@@ -14,9 +14,9 @@ class CollectInternetDbTask : IScheduledTask
     private readonly ILogger _logger;
     private readonly ILibraryManager _libraryManager;
 
-    public CollectInternetDbTask(ILogManager logManager, ILibraryManager libraryManager)
+    public CollectInternetDbTask(ILibraryManager libraryManager)
     {
-        _logger = logManager.GetLogger(nameof(CollectInternetDbTask));
+        _logger = Plugin.Instance.Logger;
         _libraryManager = libraryManager;
     }
 

@@ -48,7 +48,7 @@ class CollectInternetDbTask : IScheduledTask
             }
             catch (Exception ex)
             {
-                _logger.Error("Error while executing collector `{0}`: {1}", collector.Name, ex.Message);
+                _logger.Error("Error while executing collector `{0}`: {1}\n{2}", collector.Name, ex.Message, ex.StackTrace);
             }
 
             currentProgress += step;

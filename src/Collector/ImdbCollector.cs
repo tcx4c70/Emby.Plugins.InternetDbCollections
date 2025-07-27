@@ -37,47 +37,54 @@ abstract class ImdbCollector : ICollector
 
     public async Task UpdateMetadataAsync(IProgress<double> progress, CancellationToken cancellationToken = default)
     {
-        await CleanupTagsAsync(new ProgressWithBound(progress, 0, 50), cancellationToken);
-        await AddTagsAsync(new ProgressWithBound(progress, 50, 100), cancellationToken);
+        await CleanupTagsAsync(new ProgressWithBound(progress, 0, 50), true, cancellationToken);
+        await AddTagsAsync(new ProgressWithBound(progress, 50, 100), true, cancellationToken);
     }
 
     public async Task CleanupMetadataAsync(IProgress<double> progress, CancellationToken cancellationToken = default)
     {
-        await CleanupTagsAsync(progress, cancellationToken);
+        await CleanupTagsAsync(progress, false, cancellationToken);
     }
 
-    private Task CleanupTagsAsync(IProgress<double> progress, CancellationToken cancellationToken = default)
+    private Task CleanupTagsAsync(IProgress<double> progress, bool onlyNotInCollection = false, CancellationToken cancellationToken = default)
     {
-        var items = _libraryManager.GetItemList(new InternalItemsQuery
+        List<BaseItem> items = _libraryManager.GetItemList(new InternalItemsQuery
         {
             // MediaTypes = new[] { MediaType.Video },
             IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
             Tags = new[] { _name },
-        });
-        _logger.Info("Found {0} items with tag '{1}' from library, start to remove the tag from the items", items.Length, _name);
+        }).ToList();
+        if (onlyNotInCollection)
+        {
+            items = items
+                .Where(item => !item.ProviderIds.ContainsKey(s_providerId) || !_items.ContainsKey(item.ProviderIds[s_providerId]))
+                .ToList();
+        }
+        _logger.Info("Found {0} items with tag '{1}' from library that are not in '{2}' now, start to remove the tag from the items", items.Count, _name, Name);
 
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            progress.Report(100.0 * idx / items.Length);
+            progress.Report(100.0 * idx / items.Count);
             item.Tags = item.Tags.Where(tag => tag != _name).ToArray();
             _libraryManager.UpdateItem(item, item, ItemUpdateType.MetadataEdit);
-            _logger.Debug("Remove tag '{0}' from item '{1}' ({2}/{3})", _name, item.Name, idx + 1, items.Length);
+            _logger.Debug("Remove tag '{0}' from item '{1}' ({2}/{3})", _name, item.Name, idx + 1, items.Count);
         }
 
-        _logger.Info("Removed tag '{0}' from {1} items", _name, items.Length);
+        _logger.Info("Removed tag '{0}' from {1} items", _name, items.Count);
         progress.Report(100);
         return Task.CompletedTask;
     }
 
-    private Task AddTagsAsync(IProgress<double> progress, CancellationToken cancellationToken = default)
+    private Task AddTagsAsync(IProgress<double> progress, bool onlyNotInCollection = true, CancellationToken cancellationToken = default)
     {
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
             // MediaTypes = new[] { MediaType.Video },
             IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
             AnyProviderIdEquals = _items.Keys.Select((imdbId, _) => KeyValuePair.Create(s_providerId, imdbId)).ToList(),
+            ExcludeTags = onlyNotInCollection ? new [] { _name } : Array.Empty<string>(),
         });
         _logger.Info("Found {0} items in library, start to add tag '{1}'", items.Length, _name);
 

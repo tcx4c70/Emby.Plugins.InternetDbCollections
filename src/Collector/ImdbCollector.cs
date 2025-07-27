@@ -67,7 +67,7 @@ abstract class ImdbCollector : ICollector
                 .Where(item => !item.ProviderIds.ContainsKey(s_providerId) || !_items.ContainsKey(item.ProviderIds[s_providerId]))
                 .ToList();
         }
-        _logger.Info("Found {0} items with tag '{1}' from library that are not in '{2}' now, start to remove the tag from the items", items.Count, _name, Name);
+        _logger.Info("Found {0} items need to remove tag '{1}'", items.Count, _name);
 
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {

@@ -56,7 +56,7 @@ class ImdbChartCollector : ImdbCollector
         var jsonData = response[dataStartIdx..dataEndIdx];
         var jsonObject = JsonNode.Parse(jsonData);
         // TODO: better error handling
-        var items = jsonObject["props"]["pageProps"]["pageData"]["chartTitles"]["edges"].AsArray();
+        var items = jsonObject["props"]["pageProps"]["pageData"].AsObject().First().Value["edges"].AsArray();
         _items = items
             .Select((item, idx) => KeyValuePair.Create(item["node"]["id"].ToString(), new ImdbItem(idx + 1, item["node"]["id"].ToString())))
             .ToDictionary(

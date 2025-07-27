@@ -1,5 +1,6 @@
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -58,10 +59,21 @@ class ImdbChartCollector : ImdbCollector
         // TODO: better error handling
         var items = jsonObject["props"]["pageProps"]["pageData"].AsObject().First().Value["edges"].AsArray();
         _items = items
-            .Select((item, idx) => KeyValuePair.Create(item["node"]["id"].ToString(), new ImdbItem(idx + 1, item["node"]["id"].ToString())))
+            .Select((item, idx) =>
+                {
+                    var imdbId = GetImdbId(item);
+                    return KeyValuePair.Create(imdbId, new ImdbItem(idx + 1, imdbId));
+                })
             .ToDictionary(
                 item => item.Key,
                 item => item.Value);
         _logger.Info("Parsed IMDb chart '{0}' items: {1} items", _id, _items.Count);
+    }
+
+    private string GetImdbId(JsonNode item)
+    {
+        return item?["node"]?["id"]?.ToString() ??
+            item?["node"]?["release"]?["titles"]?.AsArray()?.FirstOrDefault()?["id"]?.ToString() ??
+            throw new NotImplementedException($"Can't parse IMDb ID for chart {_id}. Please open an issue on GitHub and provide the chart ID.");
     }
 }

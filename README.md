@@ -6,17 +6,19 @@ This is an Emby plugin that integrates metadata collections from popular Interne
 
 The plugin collects metadata information from internet databases (such as IMDb) and automatically updates your Emby library with this data.
 
-For now, it only supports the IMDb Top 250 movies collection and will apply matching tags to your local media items.
-
 ## Status
 
 This plugin is **under active development**. There may be breaking changes in the API and functionality as new features and internet databases are added.
 
 ## Features
 - Supported datasources:
-  - IMDb Top 250 movies collection
+  - [IMDb Top 250 movies](https://www.imdb.com/chart/top/)
+  - [IMDb Top 250 TV shows](https://www.imdb.com/chart/toptv/)
+  - [Top 100 Greatest Movies of All Time (The Ultimate List)](https://www.imdb.com/list/ls055592025/)
+  - General IMDb charts & lists (only test a few charts & lists, might not work)
 - Supported actions:
   - Add tags to media items
+  - Create collections and add items to collections
 
 ## Installation
 
@@ -25,6 +27,11 @@ This plugin is **under active development**. There may be breaking changes in th
 3. Restart the Emby server.
 4. The plugin will register and create scheduled tasks automatically.
 
+## Uninstallation
+1. (Only when you don't want to keep the tags and collections created by the plugin) Run "Cleanup Metadata" task to cleanup tags and collections created by the plugin.
+2. Remove the plugin DLL from the Emby plugins directory.
+3. Restart the Emby server.
+
 ## Usage
 
 Once installed, the plugin automatically manages collections. It includes scheduled tasks to fetch data from sources like IMDb.
@@ -32,15 +39,11 @@ Access the collections in your Emby library, and use the plugin's configuration 
 
 ## Configuration
 
-TODO
+You can configure the plugin through the Emby web interface under the plugins section. Here you can enable or disable specific data sources, and customize collection behavior.
 
 ## TODO
 
-- Emby configuration page
-- Cleanup task to remove tags and remove items from collections
-- More datasources and collections:
-  - Generic IMDb chart support
-  - Generic IMDb list support
+- A real collector editor page. For now, user can only modify exsiting collector by adding a new one with the same type and id, which is not very user-friendly.
 
 ## Contributing
 

@@ -37,7 +37,6 @@ TODO
 ## TODO
 
 - Emby configuration page
-- Add media items (movies, TV shows) to collections
 - Cleanup task to remove tags and remove items from collections
 - More datasources and collections:
   - Generic IMDb chart support

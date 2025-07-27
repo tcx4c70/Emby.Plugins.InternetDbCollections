@@ -38,7 +38,11 @@ class CollectInternetDbTask : IScheduledTask
         _logger.Info("Start task {0}", Name);
         progress?.Report(0.0);
 
-        var collectors = BuildCollectors();
+        var collectors = new CollectorBuilder()
+            .UseConfigs(Plugin.Instance.Configuration.Collectors)
+            .UseLogger(_logger)
+            .UseLibraryManager(_libraryManager)
+            .Build();
         double step = 100.0 / collectors.Count;
         double currentProgress = 0.0;
         foreach (var collector in collectors)
@@ -67,33 +71,5 @@ class CollectInternetDbTask : IScheduledTask
             Type = TaskTriggerInfo.TriggerInterval,
             IntervalTicks = TimeSpan.FromDays(30).Ticks,
         };
-    }
-
-    private List<ICollector> BuildCollectors()
-    {
-        return Plugin.Instance.Configuration.Collectors
-            .Select(BuildCollectors)
-            .Where(c => c != null)
-            .ToList();
-    }
-
-    // TODO: Enable nullable check in the project
-    private ICollector BuildCollectors(CollectorConfiguration config)
-    {
-        if (!config.Enabled)
-        {
-            return null;
-        }
-
-        switch (config.Type)
-        {
-            case CollectorType.ImdbChart:
-                return new ImdbChartCollector(config.Id, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
-            case CollectorType.ImdbList:
-                return new ImdbListCollector(config.Id, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
-            default:
-                _logger.Warn("Unknown collector type `{0}`, skip", config.Type);
-                return null;
-        }
     }
 }

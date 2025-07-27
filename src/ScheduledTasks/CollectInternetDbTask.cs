@@ -43,7 +43,7 @@ class CollectInternetDbTask : IScheduledTask
             .UseLogger(_logger)
             .UseLibraryManager(_libraryManager)
             .Build();
-        double step = 100.0 / collectors.Count;
+        double step = collectors.Count == 0 ? 100.0 : 100.0 / collectors.Count;
         double currentProgress = 0.0;
         foreach (var collector in collectors)
         {

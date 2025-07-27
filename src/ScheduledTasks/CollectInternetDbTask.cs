@@ -2,11 +2,13 @@ namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
 using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Common;
+using Emby.Plugins.InternetDbCollections.Configuration;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,11 +71,29 @@ class CollectInternetDbTask : IScheduledTask
 
     private List<ICollector> BuildCollectors()
     {
-        return new List<ICollector>
+        return Plugin.Instance.Configuration.Collectors
+            .Select(BuildCollectors)
+            .Where(c => c != null)
+            .ToList();
+    }
+
+    // TODO: Enable nullable check in the project
+    private ICollector BuildCollectors(CollectorConfiguration config)
+    {
+        if (!config.Enabled)
         {
-            new ImdbChartCollector("top", true, true, _logger, _libraryManager),
-            new ImdbChartCollector("toptv", true, true, _logger, _libraryManager),
-            new ImdbListCollector("ls055592025", true, true, _logger, _libraryManager),
-        };
+            return null;
+        }
+
+        switch (config.Type)
+        {
+            case CollectorType.ImdbChart:
+                return new ImdbChartCollector(config.Id, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
+            case CollectorType.ImdbList:
+                return new ImdbListCollector(config.Id, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
+            default:
+                _logger.Warn("Unknown collector type `{0}`, skip", config.Type);
+                return null;
+        }
     }
 }

@@ -7,6 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Configuration\configPage.html" />
+    <None Remove="Configuration\configPage.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Configuration\configPage.html" />
+    <EmbeddedResource Include="Configuration\configPage.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MediaBrowser.Server.Core" Version="4.8.11" />
   </ItemGroup>
 

@@ -4,10 +4,12 @@ using Emby.Plugins.InternetDbCollections.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Logging;
+using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using System;
+using System.Collections.Generic;
 
-public class Plugin : BasePlugin<PluginConfiguration>
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {
     public static Plugin Instance { get; private set; }
 
@@ -28,4 +30,21 @@ public class Plugin : BasePlugin<PluginConfiguration>
     public override string Description => "Internet Database Collections for Emby";
 
     public override Guid Id => _id;
+
+    public IEnumerable<PluginPageInfo> GetPages()
+    {
+        return new[]
+        {
+            new PluginPageInfo
+            {
+                Name = Name,
+                EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.html",
+            },
+            new PluginPageInfo
+            {
+                Name = $"{Name}js",
+                EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.js",
+            }
+        };
+    }
 }

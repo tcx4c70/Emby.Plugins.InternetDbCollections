@@ -72,9 +72,9 @@ class CollectInternetDbTask : IScheduledTask
     {
         return new List<ICollector>
         {
-            new ImdbChartCollector("top", _logger, _libraryManager),
-            new ImdbChartCollector("toptv", _logger, _libraryManager),
-            new ImdbListCollector("ls055592025", _logger, _libraryManager),
+            new ImdbChartCollector("top", true, true, _logger, _libraryManager),
+            new ImdbChartCollector("toptv", true, true, _logger, _libraryManager),
+            new ImdbListCollector("ls055592025", true, true, _logger, _libraryManager),
         };
     }
 }

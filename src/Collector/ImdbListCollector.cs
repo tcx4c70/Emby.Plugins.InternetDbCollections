@@ -15,8 +15,8 @@ class ImdbListCollector : ImdbCollector
     private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
     private static readonly string s_jsonDataEndTag = "</script>";
 
-    public ImdbListCollector(string listId, ILogger logger, ILibraryManager libraryManager)
-        : base(listId, logger, libraryManager)
+    public ImdbListCollector(string listId, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
+        : base(listId, tag, collection, logger, libraryManager)
     {
     }
 

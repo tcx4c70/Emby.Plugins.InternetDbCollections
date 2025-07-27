@@ -19,8 +19,8 @@ class ImdbChartCollector : ImdbCollector
     private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
     private static readonly string s_jsonDataEndTag = "</script>";
 
-    public ImdbChartCollector(string chartId, ILogger logger, ILibraryManager libraryManager)
-        : base(chartId, logger, libraryManager)
+    public ImdbChartCollector(string chartId, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
+        : base(chartId, tag, collection, logger, libraryManager)
     {
     }
 

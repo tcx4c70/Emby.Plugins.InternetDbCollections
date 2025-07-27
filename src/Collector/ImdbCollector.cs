@@ -24,9 +24,14 @@ abstract class ImdbCollector : ICollector
     protected string _description;
     protected IDictionary<string, ImdbItem> _items;
 
-    public ImdbCollector(string id, ILogger logger, ILibraryManager libraryManager)
+    private bool _tag;
+    private bool _collection;
+
+    public ImdbCollector(string id, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
     {
         _id = id;
+        _tag = tag;
+        _collection = collection;
         _logger = logger;
         _libraryManager = libraryManager;
     }
@@ -49,6 +54,13 @@ abstract class ImdbCollector : ICollector
 
     private async Task UpdateTagsAsync(IProgress<double> progress, CancellationToken cancellationToken = default)
     {
+        if (!_tag)
+        {
+            _logger.Debug("Tagging is disabled for collector '{0}', skipping tag update", Name);
+            progress.Report(100);
+            return;
+        }
+
         await CleanupTagsAsync(new ProgressWithBound(progress, 0, 50), true, cancellationToken);
         await AddTagsAsync(new ProgressWithBound(progress, 50, 100), true, cancellationToken);
     }
@@ -113,6 +125,13 @@ abstract class ImdbCollector : ICollector
 
     private async Task UpdateCollectionAsync(IProgress<double> progress, CancellationToken cancellationToken = default)
     {
+        if (!_collection)
+        {
+            _logger.Debug("Collection is disabled for collector '{0}', skipping collection update", Name);
+            progress.Report(100);
+            return;
+        }
+
         await CleanupCollectionAsync(new ProgressWithBound(progress, 0, 50), true, cancellationToken);
         await AddCollectionAsync(new ProgressWithBound(progress, 50, 100), true, cancellationToken);
     }

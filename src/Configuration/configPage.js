@@ -8,13 +8,16 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
         view.addEventListener('click', function (e) {
             var btnDeleteCollector = e.target.closest('.btnDeleteCollector');
-
             if (btnDeleteCollector) {
                 instance.deleteCollector(btnDeleteCollector);
             }
 
-            var btnAddCollector = e.target.closest('.btnAddCollector');
+            var btnEditCollector = e.target.closest('.btnEditCollector');
+            if (btnEditCollector) {
+                instance.editCollector(btnEditCollector);
+            }
 
+            var btnAddCollector = e.target.closest('.btnAddCollector');
             if (btnAddCollector) {
                 instance.addCollector();
             }
@@ -43,6 +46,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             html += "<div class='listItemBodyText secondary'>" + collector.Id + "</div>";
             html += '</div>';
 
+            html += '<button type="button" is="paper-icon-button-light" data-collector-idex="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnEditCollector"><i class="md-icon">edit</i></button>';
             html += '<button type="button" is="paper-icon-button-light" data-collector-idex="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnDeleteCollector"><i class="md-icon">delete</i></button>';
 
             html += '</div>';
@@ -51,7 +55,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         this.view.querySelector('.collectorList').innerHTML = html;
     };
 
-    View.prototype.showCollectorEditor = function (dialogHelper) {
+    View.prototype.showCollectorEditor = function (dialogHelper, collectorIndex) {
         var instance = this;
 
         var dialogOptions = {
@@ -67,6 +71,20 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
         var html = '';
         var title = 'New Collector';
+        var collectorType = 'IMDb Chart';
+        var collectorId = '';
+        var collectorEnabled = true;
+        var collectorEnableTags = true;
+        var collectorEnableCollections = true;
+        if (collectorIndex !== null && collectorIndex !== undefined) {
+            var collectorConfig = instance.config.Collectors[collectorIndex];
+            title = 'Edit Collector';
+            collectorType = collectorConfig.Type;
+            collectorId = collectorConfig.Id;
+            collectorEnabled = collectorConfig.Enabled;
+            collectorEnableTags = collectorConfig.EnableTags;
+            collectorEnableCollections = collectorConfig.EnableCollections;
+        }
 
         html += '<div class="formDialogHeader">';
         html += '<button is="paper-icon-button-light" class="btnCancel autoSize" tabindex="-1"><i class="md-icon">&#xE5C4;</i></button>';
@@ -81,29 +99,29 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
         html += '<div class="selectContainer">\
                     <select id="collectorType" name="collectorType" is="emby-select" label="Type:">\
-                        <option value="IMDb Chart">IMDb Chart</option>\
-                        <option value="IMDb List">IMDb List</option>\
+                        <option value="IMDb Chart" ' + (collectorType === 'IMDb Chart' ? 'selected' : '') + '>IMDb Chart</option>\
+                        <option value="IMDb List" ' + (collectorType === 'IMDb List' ? 'selected' : '') + '>IMDb List</option>\
                     </select>\
                 </div>';
 
         html += '<div class="inputContainer">\
                     <div class="flex align-items-center">\
                         <div class="flex-grow">\
-                            <input is="emby-input" id="collectorId" name="collectorId" label="ID:" required="required" autocomplete="off" />\
+                            <input is="emby-input" id="collectorId" name="collectorId" label="ID:" required="required" autocomplete="off" ' + (collectorId !== '' ? 'value="' + collectorId + '"' : '') + '/>\
                         </div>\
                     </div>\
                 </div>';
 
         html += '<div class="checkboxContainer checkboxContainer-withDescription">\
                     <label>\
-                        <input type="checkbox" is="emby-checkbox" id="collectorEnabled" checked="checked" />\
+                        <input type="checkbox" is="emby-checkbox" id="collectorEnabled" ' + (collectorEnabled ? 'checked' : '') + '/>\
                         <span>Enabled</span>\
                     </label>\
                  </div>';
 
         html += '<div class="checkboxContainer checkboxContainer-withDescription">\
                     <label>\
-                        <input type="checkbox" is="emby-checkbox" id="collectorEnableTags" checked="checked" />\
+                        <input type="checkbox" is="emby-checkbox" id="collectorEnableTags" ' + (collectorEnableTags ? 'checked' : '') + '/>\
                         <span>Enable Tags</span>\
                     </label>\
                     <div class="fieldDescription">Add tags to media items</div>\
@@ -111,7 +129,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
         html += '<div class="checkboxContainer checkboxContainer-withDescription">\
                     <label>\
-                        <input type="checkbox" is="emby-checkbox" id="collectorEnableCollections" checked="checked" />\
+                        <input type="checkbox" is="emby-checkbox" id="collectorEnableCollections" ' + (collectorEnableCollections ? 'checked' : '') + '/>\
                         <span>Enable Collections</span>\
                     </label>\
                     <div class="fieldDescription">Add media items to collections</div>\
@@ -136,25 +154,13 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         dlg.querySelector('form').addEventListener("submit", function (e) {
             loading.show();
 
-            var newEntry = true;
+            var newEntry = collectorIndex === null || collectorIndex === undefined;
 
             var type = dlg.querySelector('#collectorType').value;
             var id = dlg.querySelector('#collectorId').value;
             var enabled = dlg.querySelector('#collectorEnabled').checked;
             var enableTags = dlg.querySelector('#collectorEnableTags').checked;
             var enableCollections = dlg.querySelector('#collectorEnableCollections').checked;
-
-            // need to handle updating a collector in addition to creating a new one
-            if (instance.config.Collectors.length > 0) {
-                for (var i = 0, length = instance.config.Collectors.length; i < length; i++) {
-                    if (instance.config.Collectors[i].Type === type && instance.config.Collectors[i].Id === id) {
-                        newEntry = false;
-                        instance.config.Collectors[i].Enabled = enabled;
-                        instance.config.Collectors[i].EnableTags = enableTags;
-                        instance.config.Collectors[i].EnableCollections = enableCollections;
-                    }
-                }
-            }
 
             if (newEntry) {
                 var collector = {};
@@ -164,6 +170,12 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 collector.EnableTags = enableTags;
                 collector.EnableCollections = enableCollections;
                 instance.config.Collectors.push(collector);
+            } else {
+                instance.config.Collectors[collectorIndex].Type = type;
+                instance.config.Collectors[collectorIndex].Id = id;
+                instance.config.Collectors[collectorIndex].Enabled = enabled;
+                instance.config.Collectors[collectorIndex].EnableTags = enableTags;
+                instance.config.Collectors[collectorIndex].EnableCollections = enableCollections;
             }
 
             ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(function () {
@@ -183,9 +195,18 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var instance = this;
 
         require(['dialogHelper', 'formDialogStyle', 'emby-select', 'emby-input', 'emby-checkbox', 'paper-icon-button-light'], function (dialogHelper) {
-            instance.showCollectorEditor(dialogHelper);
+            instance.showCollectorEditor(dialogHelper, null);
         });
     };
+
+    View.prototype.editCollector = function (link) {
+        var instance = this;
+        var collectorIndex = link.getAttribute('data-collector-idex');
+
+        require(['dialogHelper', 'formDialogStyle', 'emby-select', 'emby-input', 'emby-checkbox', 'paper-icon-button-light'], function (dialogHelper) {
+            instance.showCollectorEditor(dialogHelper, collectorIndex);
+        });
+    }
 
     View.prototype.deleteCollector = function (link) {
         var instance = this;

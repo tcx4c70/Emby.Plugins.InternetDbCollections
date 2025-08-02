@@ -3,13 +3,15 @@ namespace Emby.Plugins.InternetDbCollections;
 using Emby.Plugins.InternetDbCollections.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
-public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
 {
     public static Plugin Instance { get; private set; }
 
@@ -30,6 +32,14 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public override string Description => "Internet Database Collections for Emby";
 
     public override Guid Id => _id;
+
+    public ImageFormat ThumbImageFormat => ImageFormat.Png;
+
+    public Stream GetThumbImage()
+    {
+        var type = GetType();
+        return type.Assembly.GetManifestResourceStream($"{type.Namespace}.Resources.thumb.png");
+    }
 
     public IEnumerable<PluginPageInfo> GetPages()
     {

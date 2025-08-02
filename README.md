@@ -43,7 +43,6 @@ You can configure the plugin through the Emby web interface under the plugins se
 
 ## TODO
 
-- A real collector editor page. For now, user can only modify exsiting collector by adding a new one with the same type and id, which is not very user-friendly.
 - Other datasource, such as:
   - Douban (Maybe it's hard to support it since we really need to parse the HTML page and it's a little hard to introduce third-party library into an Emby plugin)
   - Trakt

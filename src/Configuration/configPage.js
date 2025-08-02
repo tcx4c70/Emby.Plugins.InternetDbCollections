@@ -10,7 +10,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             var btnDeleteCollector = e.target.closest('.btnDeleteCollector');
 
             if (btnDeleteCollector) {
-                instance.deleteCollector(btnDeleteCollector.getAttribute('collector-type'), btnDeleteCollector.getAttribute('collector-id'));
+                instance.deleteCollector(btnDeleteCollector);
             }
 
             var btnAddCollector = e.target.closest('.btnAddCollector');
@@ -23,23 +23,11 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
     Object.assign(View.prototype, BaseView.prototype);
 
-    View.prototype.loadConfiguration = function () {
+    View.prototype.pluginId = "1B55EFD5-6080-4207-BCF8-DC2723C7AC10";
 
-        var instance = this;
+    View.prototype.config = null;
 
-        ApiClient.getPluginConfiguration("1B55EFD5-6080-4207-BCF8-DC2723C7AC10").then(function (pluginConfig) {
-
-            // Just in case it's empty
-            pluginConfig.RootLocations = pluginConfig.RootLocations || [];
-
-            instance.loadCollector(pluginConfig);
-        });
-
-        loading.hide();
-    };
-
-    View.prototype.loadCollector = function (pluginConfig) {
-
+    View.prototype.loadCollectors = function (pluginConfig) {
         var html = "";
 
         for (var i = 0, length = pluginConfig.Collectors.length; i < length; i++) {
@@ -55,7 +43,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             html += "<div class='listItemBodyText secondary'>" + collector.Id + "</div>";
             html += '</div>';
 
-            html += '<button type="button" is="paper-icon-button-light" collector-type="' + collector.Type + '" collector-id="' + collector.Id + '" class="btnDeleteCollector"><i class="md-icon">delete</i></button>';
+            html += '<button type="button" is="paper-icon-button-light" data-collector-idex="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnDeleteCollector"><i class="md-icon">delete</i></button>';
 
             html += '</div>';
         }
@@ -64,7 +52,6 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
     };
 
     View.prototype.showCollectorEditor = function (dialogHelper) {
-
         var instance = this;
 
         var dialogOptions = {
@@ -86,7 +73,6 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         html += '<h3 class="formDialogHeaderTitle">';
         html += title;
         html += '</h3>';
-
         html += '</div>';
 
         html += '<div is="emby-scroller" data-horizontal="false" data-centerfocus="card" class="formDialogContent">';
@@ -150,45 +136,41 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         dlg.querySelector('form').addEventListener("submit", function (e) {
             loading.show();
 
-            ApiClient.getPluginConfiguration("1B55EFD5-6080-4207-BCF8-DC2723C7AC10").then(function (config) {
-                var newEntry = true;
+            var newEntry = true;
 
-                var type = dlg.querySelector('#collectorType').value;
-                var id = dlg.querySelector('#collectorId').value;
-                var enabled = dlg.querySelector('#collectorEnabled').checked;
-                var enableTags = dlg.querySelector('#collectorEnableTags').checked;
-                var enableCollections = dlg.querySelector('#collectorEnableCollections').checked;
+            var type = dlg.querySelector('#collectorType').value;
+            var id = dlg.querySelector('#collectorId').value;
+            var enabled = dlg.querySelector('#collectorEnabled').checked;
+            var enableTags = dlg.querySelector('#collectorEnableTags').checked;
+            var enableCollections = dlg.querySelector('#collectorEnableCollections').checked;
 
-                // need to handle updating a collector in addition to creating a new one
-                if (config.Collectors.length > 0) {
-                    for (var i = 0, length = config.Collectors.length; i < length; i++) {
-                        if (config.Collectors[i].Type === type && config.Collectors[i].Id === id) {
-                            newEntry = false;
-                            config.Collectors[i].Enabled = enabled;
-                            config.Collectors[i].EnableTags = enableTags;
-                            config.Collectors[i].EnableCollections = enableCollections;
-                        }
+            // need to handle updating a collector in addition to creating a new one
+            if (instance.config.Collectors.length > 0) {
+                for (var i = 0, length = instance.config.Collectors.length; i < length; i++) {
+                    if (instance.config.Collectors[i].Type === type && instance.config.Collectors[i].Id === id) {
+                        newEntry = false;
+                        instance.config.Collectors[i].Enabled = enabled;
+                        instance.config.Collectors[i].EnableTags = enableTags;
+                        instance.config.Collectors[i].EnableCollections = enableCollections;
                     }
                 }
+            }
 
-                if (newEntry) {
-                    var collector = {};
-                    collector.Type = type;
-                    collector.Id = id;
-                    collector.Enabled = enabled;
-                    collector.EnableTags = enableTags;
-                    collector.EnableCollections = enableCollections;
-                    config.Collectors.push(collector);
-                }
+            if (newEntry) {
+                var collector = {};
+                collector.Type = type;
+                collector.Id = id;
+                collector.Enabled = enabled;
+                collector.EnableTags = enableTags;
+                collector.EnableCollections = enableCollections;
+                instance.config.Collectors.push(collector);
+            }
 
-                ApiClient.updatePluginConfiguration("1B55EFD5-6080-4207-BCF8-DC2723C7AC10", config).then(function () {
-                    loading.hide();
+            ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(function () {
+                loading.hide();
 
-                    dialogHelper.close(dlg);
-                    instance.loadConfiguration();
-                });
-
-                return true;
+                dialogHelper.close(dlg);
+                instance.loadCollectors(instance.config);
             });
 
             e.preventDefault();
@@ -198,7 +180,6 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
     };
 
     View.prototype.addCollector = function () {
-
         var instance = this;
 
         require(['dialogHelper', 'formDialogStyle', 'emby-select', 'emby-input', 'emby-checkbox', 'paper-icon-button-light'], function (dialogHelper) {
@@ -206,45 +187,41 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         });
     };
 
-    View.prototype.deleteCollector = function (collectorType, collectorId) {
-
+    View.prototype.deleteCollector = function (link) {
         var instance = this;
+        var collectorType = link.getAttribute('data-collector-type');
+        var collectorId = link.getAttribute('data-collector-id');
+        var collectorIndex = link.getAttribute('data-collector-idex');
 
         require(['confirm'], function (confirm) {
             confirm({
                 title: 'Delete Collector',
-                text: 'Delete this collector?',
+                text: 'Delete this collector (type: ' + collectorType + ', ID: ' + collectorId + ')?',
                 confirmText: 'Delete',
                 primary: 'cancel'
             }).then(function () {
                 loading.show();
 
-                ApiClient.getPluginConfiguration("1B55EFD5-6080-4207-BCF8-DC2723C7AC10").then(function (config) {
-                    var index = 0;
-                    for (var i = 0, length = config.Collectors.length; i < length; i++) {
-                        if (config.Collectors[i].Type === collectorType && config.Collectors[i].Id === collectorId) {
-                            index = i;
-                            break;
-                        }
-                    }
-
-                    config.Collectors.splice(index, 1);
-
-                    ApiClient.updatePluginConfiguration("1B55EFD5-6080-4207-BCF8-DC2723C7AC10", config).then(function () {
-                        loading.hide();
-                        instance.loadConfiguration();
-                    });
+                instance.config.Collectors.splice(collectorIndex, 1);
+                ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(function () {
+                    instance.loadCollectors(instance.config);
+                    loading.hide();
                 });
             });
         });
     };
 
     View.prototype.onResume = function (options) {
-
         BaseView.prototype.onResume.apply(this, arguments);
 
+        loading.show();
+
         var instance = this;
-        instance.loadConfiguration();
+        ApiClient.getPluginConfiguration(instance.pluginId).then(function (pluginConfig) {
+            instance.config = pluginConfig;
+            instance.loadCollectors(instance.config);
+            loading.hide();
+        });
     };
 
     return View;

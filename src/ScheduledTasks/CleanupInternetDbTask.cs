@@ -53,7 +53,7 @@ class CleanupInternetDbTask : IScheduledTask
             }
             catch (Exception ex)
             {
-                _logger.Error("Error while executing collector `{0}`: {1}\n{2}", collector.Name, ex.Message, ex.StackTrace);
+                _logger.ErrorException("Error while executing collector `{0}`", ex, collector.Name);
             }
 
             currentProgress += step;

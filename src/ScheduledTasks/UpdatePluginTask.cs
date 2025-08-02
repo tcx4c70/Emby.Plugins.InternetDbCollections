@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,7 +17,6 @@ using MediaBrowser.Controller;
 using MediaBrowser.Model.Activity;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Logging;
-using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
 
 class UpdatePluginTask : IScheduledTask
@@ -30,7 +30,6 @@ class UpdatePluginTask : IScheduledTask
     private readonly IServerApplicationHost _serverApplicationHost;
     private readonly ILocalizationManager _localizationManager;
     private readonly IHttpClient _httpClient;
-    private readonly IJsonSerializer _jsonSerializer;
 
     public UpdatePluginTask(
         IApplicationHost applicationHost,
@@ -39,7 +38,6 @@ class UpdatePluginTask : IScheduledTask
         IServerApplicationHost serverApplicationHost,
         ILocalizationManager localizationManager,
         IHttpClient httpClient,
-        IJsonSerializer jsonSerializer,
         ILogger logger)
     {
         _applicationHost = applicationHost;
@@ -48,7 +46,6 @@ class UpdatePluginTask : IScheduledTask
         _serverApplicationHost = serverApplicationHost;
         _localizationManager = localizationManager;
         _httpClient = httpClient;
-        _jsonSerializer = jsonSerializer;
         _logger = logger;
     }
 
@@ -74,7 +71,7 @@ class UpdatePluginTask : IScheduledTask
                 EnableDefaultUserAgent = true,
                 CancellationToken = cancellationToken,
             }).ConfigureAwait(false);
-            var apiResult = _jsonSerializer.DeserializeFromStream<ApiResponseInfo>(response);
+            var apiResult = await JsonSerializer.DeserializeAsync<ApiResponseInfo>(response, cancellationToken: cancellationToken).ConfigureAwait(false);
 
             var currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
             var remoteVersion = ParseVersion(apiResult?.TagName);
@@ -109,6 +106,7 @@ class UpdatePluginTask : IScheduledTask
                 {
                     Name = string.Format(_localizationManager.GetLocalizedString("XUpdatedOnTo"), Category, remoteVersion, _serverApplicationHost.FriendlyName),
                     Type = "PluginUpdateInstalled",
+                    Overview = apiResult?.Body ?? string.Empty,
                     Severity = LogSeverity.Info,
                 });
                 _applicationHost.NotifyPendingRestart();
@@ -147,6 +145,9 @@ class UpdatePluginTask : IScheduledTask
     {
         [JsonPropertyName("tag_name")]
         public string TagName { get; set; }
+
+        [JsonPropertyName("body")]
+        public string Body { get; set; }
 
         [JsonPropertyName("assets")]
         public ApiAssetInfo[] Assets { get; set; }

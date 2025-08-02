@@ -73,6 +73,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var title = 'New Collector';
         var collectorType = 'IMDb Chart';
         var collectorId = '';
+        var collectorName = '';
         var collectorEnabled = true;
         var collectorEnableTags = true;
         var collectorEnableCollections = true;
@@ -81,6 +82,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             title = 'Edit Collector';
             collectorType = collectorConfig.Type;
             collectorId = collectorConfig.Id;
+            collectorName = collectorConfig.Name || '';
             collectorEnabled = collectorConfig.Enabled;
             collectorEnableTags = collectorConfig.EnableTags;
             collectorEnableCollections = collectorConfig.EnableCollections;
@@ -108,6 +110,14 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                     <div class="flex align-items-center">\
                         <div class="flex-grow">\
                             <input is="emby-input" id="collectorId" name="collectorId" label="ID:" required="required" autocomplete="off" ' + (collectorId !== '' ? 'value="' + collectorId + '"' : '') + '/>\
+                        </div>\
+                    </div>\
+                </div>';
+
+        html += '<div class="inputContainer">\
+                    <div class="flex align-items-center">\
+                        <div class="flex-grow">\
+                            <input is="emby-input" id="collectorName" name="collectorName" label="Name:" autocomplete="off" ' + (collectorName !== '' ? 'value="' + collectorName + '"' : '') + '/>\
                         </div>\
                     </div>\
                 </div>';
@@ -158,6 +168,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
             var type = dlg.querySelector('#collectorType').value;
             var id = dlg.querySelector('#collectorId').value;
+            var name = dlg.querySelector('#collectorName').value;
             var enabled = dlg.querySelector('#collectorEnabled').checked;
             var enableTags = dlg.querySelector('#collectorEnableTags').checked;
             var enableCollections = dlg.querySelector('#collectorEnableCollections').checked;
@@ -165,14 +176,16 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             if (newEntry) {
                 var collector = {};
                 collector.Type = type;
-                collector.Id = id;
+                collector.Id = id.trim();
+                collector.Name = name.trim();
                 collector.Enabled = enabled;
                 collector.EnableTags = enableTags;
                 collector.EnableCollections = enableCollections;
                 instance.config.Collectors.push(collector);
             } else {
                 instance.config.Collectors[collectorIndex].Type = type;
-                instance.config.Collectors[collectorIndex].Id = id;
+                instance.config.Collectors[collectorIndex].Id = id.trim();
+                instance.config.Collectors[collectorIndex].Name = name.trim();
                 instance.config.Collectors[collectorIndex].Enabled = enabled;
                 instance.config.Collectors[collectorIndex].EnableTags = enableTags;
                 instance.config.Collectors[collectorIndex].EnableCollections = enableCollections;

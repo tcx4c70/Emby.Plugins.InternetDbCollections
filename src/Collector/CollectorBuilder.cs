@@ -58,9 +58,9 @@ class CollectorBuilder
         switch (config.Type)
         {
             case CollectorType.ImdbChart:
-                return new ImdbChartCollector(config.Id, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
+                return new ImdbChartCollector(config.Id, config.Name, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
             case CollectorType.ImdbList:
-                return new ImdbListCollector(config.Id, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
+                return new ImdbListCollector(config.Id, config.Name, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
             default:
                 _logger.Warn("Unknown collector type `{0}`, skip", config.Type);
                 return null;

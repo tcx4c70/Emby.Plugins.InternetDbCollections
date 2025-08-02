@@ -27,9 +27,10 @@ abstract class ImdbCollector : ICollector
     private bool _tag;
     private bool _collection;
 
-    public ImdbCollector(string id, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
+    public ImdbCollector(string id, string name, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
     {
         _id = id;
+        _name = name;
         _tag = tag;
         _collection = collection;
         _logger = logger;

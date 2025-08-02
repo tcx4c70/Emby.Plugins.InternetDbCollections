@@ -15,8 +15,8 @@ class ImdbListCollector : ImdbCollector
     private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
     private static readonly string s_jsonDataEndTag = "</script>";
 
-    public ImdbListCollector(string listId, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
-        : base(listId, tag, collection, logger, libraryManager)
+    public ImdbListCollector(string listId, string name, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
+        : base(listId, name, tag, collection, logger, libraryManager)
     {
     }
 
@@ -36,8 +36,11 @@ class ImdbListCollector : ImdbCollector
         var dataEndIdx = response.IndexOf(s_jsonDataEndTag, dataStartIdx);
         var jsonData = response[dataStartIdx..dataEndIdx];
         var jsonObject = JsonNode.Parse(jsonData);
-        _name = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["name"]["originalText"].ToString();
-        _logger.Info("Parsed IMDb list name: {0}", _name);
+        if (string.IsNullOrEmpty(_name))
+        {
+            _name = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["name"]["originalText"].ToString();
+            _logger.Info("Parsed IMDb list name: {0}", _name);
+        }
         _description = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["description"]["originalText"]["plainText"].ToString();
         _logger.Info("Parsed IMDb list description: {0}", _description);
 

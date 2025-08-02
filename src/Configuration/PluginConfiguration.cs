@@ -10,6 +10,7 @@ public class PluginConfiguration : BasePluginConfiguration
         {
             Type = CollectorType.ImdbChart,
             Id = "top",
+            Name = "IMDb Top 250 movies",
             EnableTags = true,
             EnableCollections = true,
         },
@@ -17,6 +18,7 @@ public class PluginConfiguration : BasePluginConfiguration
         {
             Type = CollectorType.ImdbChart,
             Id = "toptv",
+            Name = "IMDb Top 250 TV shows",
             EnableTags = true,
             EnableCollections = true,
         },
@@ -36,6 +38,8 @@ public class CollectorConfiguration
 
     // TODO: Do all types need an ID?
     public string Id { get; set; }
+
+    public string Name { get; set; }
 
     public bool Enabled { get; set; } = true;
 

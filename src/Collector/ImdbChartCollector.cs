@@ -20,8 +20,8 @@ class ImdbChartCollector : ImdbCollector
     private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
     private static readonly string s_jsonDataEndTag = "</script>";
 
-    public ImdbChartCollector(string chartId, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
-        : base(chartId, tag, collection, logger, libraryManager)
+    public ImdbChartCollector(string chartId, string name, bool tag, bool collection, ILogger logger, ILibraryManager libraryManager)
+        : base(chartId, name, tag, collection, logger, libraryManager)
     {
     }
 
@@ -42,10 +42,13 @@ class ImdbChartCollector : ImdbCollector
 
         // Hope we can use third-party libraries to parse HTML in Emby plugin one day.
 
-        var titleStartIdx = response.IndexOf(s_titleBeginTag) + s_titleBeginTag.Length;
-        var titleEndIdx = response.IndexOf(s_titleEndTag, titleStartIdx);
-        _name = response[titleStartIdx..titleEndIdx].Trim();
-        _logger.Info("Parsed IMDb chart '{0}' name: {1}", _id, _name);
+        if (string.IsNullOrEmpty(_name))
+        {
+            var titleStartIdx = response.IndexOf(s_titleBeginTag) + s_titleBeginTag.Length;
+            var titleEndIdx = response.IndexOf(s_titleEndTag, titleStartIdx);
+            _name = response[titleStartIdx..titleEndIdx].Trim();
+            _logger.Info("Parsed IMDb chart '{0}' name: {1}", _id, _name);
+        }
 
         var descriptionStartIdx = response.IndexOf(s_descriptionBeginTag) + s_descriptionBeginTag.Length;
         var descriptionEndIdx = response.IndexOf(s_descriptionEndTag, descriptionStartIdx);

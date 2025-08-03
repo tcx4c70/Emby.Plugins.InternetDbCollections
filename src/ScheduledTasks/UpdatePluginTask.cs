@@ -37,8 +37,7 @@ class UpdatePluginTask : IScheduledTask
         IActivityManager activityManager,
         IServerApplicationHost serverApplicationHost,
         ILocalizationManager localizationManager,
-        IHttpClient httpClient,
-        ILogger logger)
+        IHttpClient httpClient)
     {
         _applicationHost = applicationHost;
         _applicationPaths = applicationPaths;
@@ -46,7 +45,7 @@ class UpdatePluginTask : IScheduledTask
         _serverApplicationHost = serverApplicationHost;
         _localizationManager = localizationManager;
         _httpClient = httpClient;
-        _logger = logger;
+        _logger = Plugin.Instance.Logger;
     }
 
     public string Name => "Update Plugin";

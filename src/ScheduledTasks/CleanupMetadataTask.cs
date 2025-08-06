@@ -11,12 +11,12 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
 
-class CleanupInternetDbTask : IScheduledTask
+class CleanupMetadataTask : IScheduledTask
 {
     private readonly ILogger _logger;
     private readonly ILibraryManager _libraryManager;
 
-    public CleanupInternetDbTask(ILibraryManager libraryManager)
+    public CleanupMetadataTask(ILibraryManager libraryManager)
     {
         _logger = Plugin.Instance.Logger;
         _libraryManager = libraryManager;

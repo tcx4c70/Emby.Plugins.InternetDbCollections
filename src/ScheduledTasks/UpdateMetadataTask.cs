@@ -10,12 +10,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-class CollectInternetDbTask : IScheduledTask
+class UpdateMetadataTask : IScheduledTask
 {
     private readonly ILogger _logger;
     private readonly ILibraryManager _libraryManager;
 
-    public CollectInternetDbTask(ILibraryManager libraryManager)
+    public UpdateMetadataTask(ILibraryManager libraryManager)
     {
         _logger = Plugin.Instance.Logger;
         _libraryManager = libraryManager;

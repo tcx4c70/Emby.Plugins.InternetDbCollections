@@ -46,6 +46,8 @@ class CleanupInternetDbTask : IScheduledTask
         double currentProgress = 0.0;
         foreach (var collector in collectors)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
                 var itemList = await collector.CollectAsync(cancellationToken);

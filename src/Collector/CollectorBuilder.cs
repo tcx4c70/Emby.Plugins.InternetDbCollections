@@ -4,14 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Emby.Plugins.InternetDbCollections.Configuration;
-using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 
 class CollectorBuilder
 {
     private IEnumerable<CollectorConfiguration> _configs = new List<CollectorConfiguration>();
     private ILogger _logger;
-    private ILibraryManager _libraryManager;
 
     public CollectorBuilder UseConfigs(IEnumerable<CollectorConfiguration> configs)
     {
@@ -25,21 +23,11 @@ class CollectorBuilder
         return this;
     }
 
-    public CollectorBuilder UseLibraryManager(ILibraryManager libraryManager)
-    {
-        _libraryManager = libraryManager ?? throw new ArgumentNullException(nameof(libraryManager), "LibraryManager cannot be null");
-        return this;
-    }
-
     public List<ICollector> Build()
     {
         if (_logger == null)
         {
             throw new InvalidOperationException("Logger must be set before building collectors");
-        }
-        if (_libraryManager == null)
-        {
-            throw new InvalidOperationException("LibraryManager must be set before building collectors");
         }
 
         return _configs
@@ -58,9 +46,9 @@ class CollectorBuilder
         switch (config.Type)
         {
             case CollectorType.ImdbChart:
-                return new ImdbChartCollector(config.Id, config.Name, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
+                return new CollectorWithConfig(new ImdbChartCollector(config.Id, _logger), config);
             case CollectorType.ImdbList:
-                return new ImdbListCollector(config.Id, config.Name, config.EnableTags, config.EnableCollections, _logger, _libraryManager);
+                return new CollectorWithConfig(new ImdbListCollector(config.Id, _logger), config);
             default:
                 _logger.Warn("Unknown collector type `{0}`, skip", config.Type);
                 return null;

@@ -2,13 +2,11 @@ namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
 using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Common;
-using Emby.Plugins.InternetDbCollections.Configuration;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -41,20 +39,20 @@ class CollectInternetDbTask : IScheduledTask
         var collectors = new CollectorBuilder()
             .UseConfigs(Plugin.Instance.Configuration.Collectors)
             .UseLogger(_logger)
-            .UseLibraryManager(_libraryManager)
             .Build();
+        var metadataManager = new MetadataManager(_logger, _libraryManager);
         double step = collectors.Count == 0 ? 100.0 : 100.0 / collectors.Count;
         double currentProgress = 0.0;
         foreach (var collector in collectors)
         {
             try
             {
-                await collector.InitializeAsync(cancellationToken);
-                await collector.UpdateMetadataAsync(new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+                var itemList = await collector.CollectAsync(cancellationToken);
+                await metadataManager.UpdateMetadataAsync(itemList, new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error while executing collector `{0}`", ex, collector.Name);
+                _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
             }
 
             currentProgress += step;

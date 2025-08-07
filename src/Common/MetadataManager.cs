@@ -68,7 +68,7 @@ public class MetadataManager
         List<BaseItem> items = _libraryManager.GetItemList(new InternalItemsQuery
         {
             // MediaTypes = new[] { MediaType.Video },
-            IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
+            IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             Tags = new[] { itemList.Name },
         }).ToList();
         if (onlyNotInItemList)
@@ -109,7 +109,7 @@ public class MetadataManager
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
             // MediaTypes = new[] { MediaType.Video },
-            IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
+            IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             AnyProviderIdEquals =
                 itemList.ProviderNames
                 .CartesianProduct(itemList.Items.Select(item => item.Id))
@@ -178,7 +178,7 @@ public class MetadataManager
         var collection = collections[0];
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
-            IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
+            IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             CollectionIds = new[] { collection.InternalId },
         }).ToList();
         if (onlyNotInItemList)
@@ -218,7 +218,7 @@ public class MetadataManager
     {
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
-            IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
+            IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             AnyProviderIdEquals =
                 itemList.ProviderNames
                 .CartesianProduct(itemList.Items.Select(item => item.Id))
@@ -236,7 +236,7 @@ public class MetadataManager
             {
                 List<BaseItem> itemsInCollection = _libraryManager.GetItemList(new InternalItemsQuery
                 {
-                    IncludeItemTypes = new[] { nameof(Movie), nameof(Series) },
+                    IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
                     CollectionIds = new[] { colls[0].InternalId },
                 }).ToList();
                 items = items.Except(itemsInCollection, new BaseItemComparer()).ToList();

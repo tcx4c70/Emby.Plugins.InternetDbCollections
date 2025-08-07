@@ -38,7 +38,7 @@ class CleanupMetadataTask : IScheduledTask
         progress?.Report(0.0);
 
         var collectors = new CollectorBuilder()
-            .UseConfigs(Plugin.Instance.Configuration.Collectors)
+            .UseConfig(Plugin.Instance.Configuration)
             .UseLogger(_logger)
             .Build();
         var metadataManager = new MetadataManager(_logger, _libraryManager);

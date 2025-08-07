@@ -8,12 +8,12 @@ using MediaBrowser.Model.Logging;
 
 class CollectorBuilder
 {
-    private IEnumerable<CollectorConfiguration> _configs = new List<CollectorConfiguration>();
+    private PluginConfiguration _config;
     private ILogger _logger;
 
-    public CollectorBuilder UseConfigs(IEnumerable<CollectorConfiguration> configs)
+    public CollectorBuilder UseConfig(PluginConfiguration config)
     {
-        _configs = configs;
+        _config = config ?? throw new ArgumentNullException(nameof(config), "Configuration cannot be null");
         return this;
     }
 
@@ -30,27 +30,29 @@ class CollectorBuilder
             throw new InvalidOperationException("Logger must be set before building collectors");
         }
 
-        return _configs
+        return _config.Collectors
             .Select(BuildOne)
             .Where(collector => collector != null)
             .ToList();
     }
 
-    private ICollector BuildOne(CollectorConfiguration config)
+    private ICollector BuildOne(CollectorConfiguration collectorConfig)
     {
-        if (!config.Enabled)
+        if (!collectorConfig.Enabled)
         {
             return null;
         }
 
-        switch (config.Type)
+        switch (collectorConfig.Type)
         {
             case CollectorType.ImdbChart:
-                return new CollectorWithConfig(new ImdbChartCollector(config.Id, _logger), config);
+                return new CollectorWithConfig(new ImdbChartCollector(collectorConfig.Id, _logger), collectorConfig);
             case CollectorType.ImdbList:
-                return new CollectorWithConfig(new ImdbListCollector(config.Id, _logger), config);
+                return new CollectorWithConfig(new ImdbListCollector(collectorConfig.Id, _logger), collectorConfig);
+            case CollectorType.MdbList:
+                return new CollectorWithConfig(new MdbListCollector(collectorConfig.Id, _config.MdbListApiKey, _logger), collectorConfig);
             default:
-                _logger.Warn("Unknown collector type `{0}`, skip", config.Type);
+                _logger.Warn("Unknown collector type `{0}`, skip", collectorConfig.Type);
                 return null;
         }
     }

@@ -4,6 +4,8 @@ using MediaBrowser.Model.Plugins;
 
 public class PluginConfiguration : BasePluginConfiguration
 {
+    public string MdbListApiKey { get; set; } = string.Empty;
+
     public CollectorConfiguration[] Collectors { get; set; } =
     {
         new CollectorConfiguration
@@ -52,4 +54,5 @@ public static class CollectorType
 {
     public const string ImdbChart = "IMDb Chart";
     public const string ImdbList = "IMDb List";
+    public const string MdbList = "MDB List";
 }

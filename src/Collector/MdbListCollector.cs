@@ -1,0 +1,119 @@
+namespace Emby.Plugins.InternetDbCollections.Collector;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Model.Logging;
+
+public class MdbListCollector : ICollector
+{
+    private readonly ILogger _logger;
+    private readonly string _listId;
+    private readonly string _apikey;
+    private readonly HttpClient _httpClient;
+
+    public MdbListCollector(string listId, string apikey, ILogger logger)
+    {
+        _listId = listId;
+        _apikey = apikey;
+        _logger = logger;
+        _httpClient = new HttpClient
+        {
+            BaseAddress = new Uri("https://api.mdblist.com"),
+        };
+    }
+
+    public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
+    {
+        _logger.Debug("Fetching MDB list '{0}' data...", _listId);
+        var list = JsonNode.Parse(await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken)).AsArray().FirstOrDefault();
+        _logger.Debug("Received MDB list '{0}' data, parsing...", _listId);
+        if (list is null)
+        {
+            _logger.Warn($"List with ID '{_listId}' not found.");
+            throw new ArgumentException($"List with ID '{_listId}' not found.", _listId);
+        }
+
+        var name = list["name"].GetValue<string>();
+        var description = list["description"].GetValue<string>();
+        _logger.Info("Parsed MDB list '{0}' name: {1}", _listId, name);
+        _logger.Info("Parsed MDB list '{0}' description: {1}", _listId, description);
+
+        _logger.Debug("Fetching items for MDB list '{0}'...", _listId);
+        var items = await ListItemsAsync(cancellationToken);
+        _logger.Debug("Received items for MDB list '{0}', parsing...", _listId);
+
+        var collectionItems =
+            items
+            .Select(item => new MdbListItem
+            {
+                Order = item["rank"].GetValue<int>(),
+                Id = item["imdb_id"].GetValue<string>(),
+                Type = GetItemType(item["mediatype"].GetValue<string>()),
+            })
+            .ToList();
+        _logger.Info("Parsed MDB List '{0}' items: {1} items", _listId, collectionItems.Count);
+
+        return new CollectionItemList
+        {
+            Name = name,
+            Description = description,
+            ProviderNames = new[] { "Imdb" },
+            Items = collectionItems,
+        };
+    }
+
+    // TODO: IAsyncEnumerable?
+    private async Task<IEnumerable<JsonNode>> ListItemsAsync(CancellationToken cancellationToken = default)
+    {
+        int offset = 0;
+        int limit = 100;
+        bool hasMore = true;
+        IEnumerable<JsonNode> items = Enumerable.Empty<JsonNode>();
+        while (hasMore)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var response = await _httpClient.GetAsync($"/lists/{_listId}/items?offset={offset}&limit={limit}&apikey={_apikey}", cancellationToken);
+            response.EnsureSuccessStatusCode();
+            var data = await response.Content.ReadAsStringAsync(cancellationToken);
+            var batchItems = JsonNode.Parse(data);
+            items = items.Concat(batchItems["movies"].AsArray()).Concat(batchItems["shows"].AsArray());
+
+            if (response.Headers.TryGetValues("x-has-more", out var hasMoreValues) && hasMoreValues.Any())
+            {
+                hasMore = bool.Parse(hasMoreValues.First());
+            }
+            else
+            {
+                throw new InvalidOperationException("Response does not contain 'x-has-more' header.");
+            }
+
+            offset += limit;
+        }
+        return items;
+    }
+
+    private string GetItemType(string type)
+    {
+        return type switch
+        {
+            "movie" => nameof(Movie),
+            "show" => nameof(Series),
+            _ => throw new NotSupportedException($"Unsupported item type: {type}")
+        };
+    }
+
+    private class MdbListItem : ICollectionItem
+    {
+        public int Order { get; set; }
+        public string Id { get; set; }
+        public string Type { get; set; }
+    }
+}

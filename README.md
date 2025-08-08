@@ -15,7 +15,8 @@ This plugin is **under active development**. There may be breaking changes in th
   - [IMDb Top 250 movies](https://www.imdb.com/chart/top/)
   - [IMDb Top 250 TV shows](https://www.imdb.com/chart/toptv/)
   - [Top 100 Greatest Movies of All Time (The Ultimate List)](https://www.imdb.com/list/ls055592025/)
-  - General IMDb charts & lists (only test a few charts & lists, might not work)
+  - General IMDb charts & lists
+  - MDB List
 - Supported actions:
   - Add tags to media items
   - Create collections and add items to collections

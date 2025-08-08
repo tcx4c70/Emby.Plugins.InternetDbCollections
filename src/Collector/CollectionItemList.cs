@@ -14,5 +14,5 @@ public class CollectionItemList
 
     public IEnumerable<string> ProviderNames { get; set; } = new List<string>();
 
-    public IEnumerable<ICollectionItem> Items { get; set; } = new List<ICollectionItem>();
+    public IEnumerable<CollectionItem> Items { get; set; } = new List<CollectionItem>();
 }

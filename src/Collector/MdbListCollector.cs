@@ -51,7 +51,7 @@ public class MdbListCollector : ICollector
 
         var collectionItems =
             items
-            .Select(item => new MdbListItem
+            .Select(item => new CollectionItem
             {
                 Order = item["rank"].GetValue<int>(),
                 Id = item["imdb_id"].GetValue<string>(),
@@ -108,12 +108,5 @@ public class MdbListCollector : ICollector
             "show" => nameof(Series),
             _ => throw new NotSupportedException($"Unsupported item type: {type}")
         };
-    }
-
-    private class MdbListItem : ICollectionItem
-    {
-        public int Order { get; set; }
-        public string Id { get; set; }
-        public string Type { get; set; }
     }
 }

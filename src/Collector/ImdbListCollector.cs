@@ -49,7 +49,7 @@ class ImdbListCollector : ICollector
 
         var items = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["titleListItemSearch"]["edges"].AsArray();
         var collectionItems = items
-            .Select((item, idx) => new ImdbListItem
+            .Select((item, idx) => new CollectionItem
             {
                 Order = idx + 1,
                 Id = item["listItem"]["id"].ToString(),
@@ -80,14 +80,5 @@ class ImdbListCollector : ICollector
             "tvMiniSeries" => nameof(Series),
             _ => throw new NotImplementedException($"Unknown item type '{type}' for chart {_listId}. Please open an issue on GitHub and provide the chart ID."),
         };
-    }
-
-    private class ImdbListItem : ICollectionItem
-    {
-        public int Order { get; init; }
-
-        public string Id { get; init; }
-
-        public string Type { get; init; }
     }
 }

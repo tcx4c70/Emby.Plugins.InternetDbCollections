@@ -47,7 +47,7 @@ public class TraktListCollector : ICollector
         _logger.Debug("Received items for Trakt list '{0}', parsing...", _listId);
 
         var items = JsonNode.Parse(itemsResponse).AsArray();
-        var collectionItems = items.Select(ToTraktListItem).ToList();
+        var collectionItems = items.Select(ToCollectionItem).ToList();
         _logger.Info("Parsed Trakt List '{0}' items: {1} items", _listId, collectionItems.Count);
 
         return new CollectionItemList
@@ -59,7 +59,7 @@ public class TraktListCollector : ICollector
         };
     }
 
-    private TraktListItem ToTraktListItem(JsonNode item)
+    private CollectionItem ToCollectionItem(JsonNode item)
     {
         var order = item["rank"].GetValue<int>();
         string id;
@@ -78,18 +78,11 @@ public class TraktListCollector : ICollector
                 throw new ArgumentException($"Unknown Trakt item type: {item["type"].GetValue<string>()}");
         }
 
-        return new TraktListItem
+        return new CollectionItem
         {
             Order = order,
             Id = id,
             Type = type,
         };
-    }
-
-    private class TraktListItem : ICollectionItem
-    {
-        public int Order { get; set; }
-        public string Id { get; set; }
-        public string Type { get; set; }
     }
 }

@@ -60,7 +60,7 @@ class ImdbChartCollector : ICollector
         // TODO: better error handling
         var items = jsonObject["props"]["pageProps"]["pageData"].AsObject().First().Value["edges"].AsArray();
         var collectionItems = items
-            .Select((item, idx) => new ImdbChartItem
+            .Select((item, idx) => new CollectionItem
             {
                 Order = idx + 1,
                 Id = GetImdbId(item),
@@ -76,15 +76,6 @@ class ImdbChartCollector : ICollector
             ProviderNames = new[] { "Imdb" },
             Items = collectionItems,
         };
-    }
-
-    private class ImdbChartItem : ICollectionItem
-    {
-        public int Order { get; init; }
-
-        public string Id { get; init; }
-
-        public string Type { get; init; }
     }
 
     private string GetImdbId(JsonNode item)

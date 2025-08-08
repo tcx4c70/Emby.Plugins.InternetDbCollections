@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
@@ -67,6 +68,19 @@ public class MdbListCollector : ICollector
         {
             Name = name,
             Description = description,
+            Ids =
+            {
+                // We need to escape _listId here because:
+                // 1. _listId here actually is in format "{username}/{listname}"
+                // 2. MDB List website only supports url format "https://mdblist.com/lists/{username}/{listname}" but
+                //    doesn't support "https://mdblist.com/lists/{listid}"
+                // 3. Slash '/' has special meaning in Emby provider ID, which means 'or' to support multiple provider
+                //    IDs for a single provider. And Emby will only format external url with the part before the first
+                //    slash (first provider ID for the provider).
+                // Thanksfully, MDB List can handle the escaped slash "%2f" between username and listname correctly. So
+                // let escape it!
+                { CollectorType.MdbList.ToProviderName(), Uri.EscapeDataString(_listId) },
+            },
             Items = collectionItems,
         };
     }

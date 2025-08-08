@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
@@ -76,6 +77,10 @@ class ImdbChartCollector : ICollector
         {
             Name = name,
             Description = description,
+            Ids =
+            {
+                { CollectorType.ImdbChart.ToProviderName(), _chartId },
+            },
             Items = collectionItems,
         };
     }

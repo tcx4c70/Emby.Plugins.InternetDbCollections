@@ -12,5 +12,7 @@ public class CollectionItemList
 
     public bool EnableCollections { get; set; }
 
+    public IDictionary<string, string> Ids = new Dictionary<string, string>();
+
     public IEnumerable<CollectionItem> Items { get; set; } = new List<CollectionItem>();
 }

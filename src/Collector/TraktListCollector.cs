@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
@@ -39,6 +40,7 @@ public class TraktListCollector : ICollector
         var list = JsonNode.Parse(listResponse);
         var name = list["name"].GetValue<string>();
         var description = list["description"].GetValue<string>();
+        var id = list["ids"]["trakt"].GetValue<int>();
         _logger.Info("Parsed Trakt list '{0}' name: {1}", _listId, name);
         _logger.Info("Parsed Trakt list '{0}' description: {1}", _listId, description);
 
@@ -54,6 +56,10 @@ public class TraktListCollector : ICollector
         {
             Name = name,
             Description = description,
+            Ids =
+            {
+                { CollectorType.TraktList.ToProviderName(), id.ToString() },
+            },
             Items = collectionItems,
         };
     }

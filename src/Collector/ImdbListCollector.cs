@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
@@ -64,6 +65,10 @@ class ImdbListCollector : ICollector
         {
             Name = name,
             Description = description,
+            Ids =
+            {
+                { CollectorType.ImdbList.ToProviderName(), _listId },
+            },
             Items = collectionItems,
         };
     }

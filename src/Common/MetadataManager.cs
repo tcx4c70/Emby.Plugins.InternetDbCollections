@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 
 public class MetadataManager
@@ -258,8 +259,12 @@ public class MetadataManager
         {
             BaseItem collection = collections[0];
             collection.Overview = itemList.Description ?? "";
+            foreach (var (name, id) in itemList.Ids)
+            {
+                collection.SetProviderId(name, id);
+            }
             _libraryManager.UpdateItem(collection, collection, ItemUpdateType.MetadataEdit);
-            _logger.Info("Updated collection '{0}' with description", itemList.Name);
+            _logger.Info("Updated collection '{0}' with description and provider IDs", itemList.Name);
         }
         else
         {

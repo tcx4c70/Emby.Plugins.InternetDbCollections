@@ -26,6 +26,21 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         view.querySelector('form').addEventListener('submit', function (e) {
             e.preventDefault();
             loading.show();
+            var mdbListApiKey = view.querySelector('.txtMdbListApiKey').value.trim();
+            if (instance.config.Collectors.some(collector => collector.Type === 'MDB List') && mdbListApiKey === '') {
+                loading.hide();
+                require(['confirm'], function (confirm) {
+                    confirm({
+                        title: 'MDB List API Key Required',
+                        text: 'You have configured a MDB List collector, but have not provided an API key. Please provide a valid API key to use this collector.',
+                        confirmText: 'OK',
+                        primary: 'cancel'
+                    });
+                });
+                return false;
+            }
+
+            instance.config.MdbListApiKey = mdbListApiKey;
             ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(Dashboard.processServerConfigurationUpdateResult);
             return false;
         });
@@ -36,6 +51,14 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
     View.prototype.pluginId = "1B55EFD5-6080-4207-BCF8-DC2723C7AC10";
 
     View.prototype.config = null;
+
+    View.prototype.loadConfig = function (pluginConfig) {
+        var instance = this;
+
+        instance.view.querySelector('.txtMdbListApiKey').value = pluginConfig.MdbListApiKey || '';
+
+        instance.loadCollectors(pluginConfig);
+    }
 
     View.prototype.loadCollectors = function (pluginConfig) {
         var html = "";
@@ -110,6 +133,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                     <select id="collectorType" name="collectorType" is="emby-select" label="Type:">\
                         <option value="IMDb Chart" ' + (collectorType === 'IMDb Chart' ? 'selected' : '') + '>IMDb Chart</option>\
                         <option value="IMDb List" ' + (collectorType === 'IMDb List' ? 'selected' : '') + '>IMDb List</option>\
+                        <option value="MDB List" ' + (collectorType === 'MDB List' ? 'selected' : '') + '>MDB List</option>\
                     </select>\
                 </div>';
 
@@ -202,7 +226,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
             loading.hide();
             dialogHelper.close(dlg);
-            instance.loadCollectors(instance.config);
+            instance.loadConfig(instance.config);
         });
 
         dialogHelper.open(dlg);
@@ -240,7 +264,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             }).then(function () {
                 loading.show();
                 instance.config.Collectors.splice(collectorIndex, 1);
-                instance.loadCollectors(instance.config);
+                instance.loadConfig(instance.config);
                 loading.hide();
             });
         });
@@ -254,7 +278,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var instance = this;
         ApiClient.getPluginConfiguration(instance.pluginId).then(function (pluginConfig) {
             instance.config = pluginConfig;
-            instance.loadCollectors(instance.config);
+            instance.loadConfig(instance.config);
             loading.hide();
         });
     };

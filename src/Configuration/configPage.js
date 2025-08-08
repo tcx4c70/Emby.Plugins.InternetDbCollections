@@ -22,6 +22,13 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 instance.addCollector();
             }
         });
+
+        view.querySelector('form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            loading.show();
+            ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(Dashboard.processServerConfigurationUpdateResult);
+            return false;
+        });
     }
 
     Object.assign(View.prototype, BaseView.prototype);
@@ -147,7 +154,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
         html += '<div class="formDialogFooter">\
                     <button is="emby-button" type="submit" class="raised button-submit block formDialogFooterItem">\
-                        <span>Save</span>\
+                        <span>Add</span>\
                     </button>\
                 </div>';
 
@@ -162,6 +169,8 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         });
 
         dlg.querySelector('form').addEventListener("submit", function (e) {
+            e.preventDefault();
+
             loading.show();
 
             var newEntry = collectorIndex === null || collectorIndex === undefined;
@@ -191,14 +200,9 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 instance.config.Collectors[collectorIndex].EnableCollections = enableCollections;
             }
 
-            ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(function () {
-                loading.hide();
-
-                dialogHelper.close(dlg);
-                instance.loadCollectors(instance.config);
-            });
-
-            e.preventDefault();
+            loading.hide();
+            dialogHelper.close(dlg);
+            instance.loadCollectors(instance.config);
         });
 
         dialogHelper.open(dlg);
@@ -235,12 +239,9 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 primary: 'cancel'
             }).then(function () {
                 loading.show();
-
                 instance.config.Collectors.splice(collectorIndex, 1);
-                ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(function () {
-                    instance.loadCollectors(instance.config);
-                    loading.hide();
-                });
+                instance.loadCollectors(instance.config);
+                loading.hide();
             });
         });
     };

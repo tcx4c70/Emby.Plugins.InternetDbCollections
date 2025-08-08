@@ -1,5 +1,6 @@
 namespace Emby.Plugins.InternetDbCollections.Configuration;
 
+using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Model.Plugins;
 
 public class PluginConfiguration : BasePluginConfiguration
@@ -50,11 +51,4 @@ public class CollectorConfiguration
     public bool EnableTags { get; set; } = true;
 
     public bool EnableCollections { get; set; } = true;
-}
-
-public static class CollectorType
-{
-    public const string ImdbChart = "IMDb Chart";
-    public const string ImdbList = "IMDb List";
-    public const string MdbList = "MDB List";
 }

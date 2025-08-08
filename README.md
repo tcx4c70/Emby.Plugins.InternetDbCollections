@@ -17,9 +17,11 @@ This plugin is **under active development**. There may be breaking changes in th
   - [Top 100 Greatest Movies of All Time (The Ultimate List)](https://www.imdb.com/list/ls055592025/)
   - General IMDb charts & lists
   - MDB List
+  - Trakt List
 - Supported actions:
   - Add tags to media items
   - Create collections and add items to collections
+  - Generate external URL links for collections
 
 ## Installation
 
@@ -46,7 +48,6 @@ You can configure the plugin through the Emby web interface under the plugins se
 
 - Other datasource, such as:
   - Douban (Maybe it's hard to support it since we really need to parse the HTML page and it's a little hard to introduce third-party library into an Emby plugin)
-  - Trakt
   - ...
 - Improvements when scraping datasource:
   - Retry

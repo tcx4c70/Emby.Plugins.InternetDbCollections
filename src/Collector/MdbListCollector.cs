@@ -54,7 +54,10 @@ public class MdbListCollector : ICollector
             .Select(item => new CollectionItem
             {
                 Order = item["rank"].GetValue<int>(),
-                Id = item["imdb_id"].GetValue<string>(),
+                Ids =
+                {
+                    { "imdb", item["imdb_id"].GetValue<string>() },
+                },
                 Type = GetItemType(item["mediatype"].GetValue<string>()),
             })
             .ToList();
@@ -64,7 +67,6 @@ public class MdbListCollector : ICollector
         {
             Name = name,
             Description = description,
-            ProviderNames = new[] { "Imdb" },
             Items = collectionItems,
         };
     }

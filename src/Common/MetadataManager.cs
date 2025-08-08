@@ -7,8 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
 using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 
@@ -74,13 +72,13 @@ public class MetadataManager
         if (onlyNotInItemList)
         {
             var providerIds =
-                itemList.ProviderNames
-                .CartesianProduct(itemList.Items.Select(item => item.Id))
+                itemList.Items
+                .SelectMany(item => item.Ids.Select(kvp => (kvp.Key.ToLower(), kvp.Value.ToLower())))
                 .ToHashSet();
             items = items
                 .Where(item =>
-                    itemList.ProviderNames
-                    .All(providerName => !item.ProviderIds.ContainsKey(providerName) || !providerIds.Contains((providerName, item.ProviderIds[providerName]))))
+                    item.ProviderIds
+                    .All(kvp => !providerIds.Contains((kvp.Key.ToLower(), kvp.Value.ToLower()))))
                 .ToList();
         }
         _logger.Info("Found {0} items need to remove tag '{1}'", items.Count, itemList.Name);
@@ -110,11 +108,7 @@ public class MetadataManager
         {
             // MediaTypes = new[] { MediaType.Video },
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-            AnyProviderIdEquals =
-                itemList.ProviderNames
-                .CartesianProduct(itemList.Items.Select(item => item.Id))
-                .Select(pair => KeyValuePair.Create(pair.Item1, pair.Item2))
-                .ToList(),
+            AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
             ExcludeTags = onlyNotHasTag ? new [] { itemList.Name } : Array.Empty<string>(),
         });
         _logger.Info("Found {0} items in library, start to add tag '{1}'", items.Length, itemList.Name);
@@ -184,13 +178,13 @@ public class MetadataManager
         if (onlyNotInItemList)
         {
             var providerIds =
-                itemList.ProviderNames
-                .CartesianProduct(itemList.Items.Select(item => item.Id))
+                itemList.Items
+                .SelectMany(item => item.Ids.Select(kvp => (kvp.Key.ToLower(), kvp.Value.ToLower())))
                 .ToHashSet();
             items = items
                 .Where(item =>
-                    itemList.ProviderNames
-                    .All(providerName => !item.ProviderIds.ContainsKey(providerName) || !providerIds.Contains((providerName, item.ProviderIds[providerName]))))
+                    item.ProviderIds
+                    .All(kvp => !providerIds.Contains((kvp.Key.ToLower(), kvp.Value.ToLower()))))
                 .ToList();
         }
         _logger.Info("Found {0} items need to be removed from the BoxSet '{1}'", items.Count, itemList.Name);
@@ -219,11 +213,7 @@ public class MetadataManager
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-            AnyProviderIdEquals =
-                itemList.ProviderNames
-                .CartesianProduct(itemList.Items.Select(item => item.Id))
-                .Select(pair => KeyValuePair.Create(pair.Item1, pair.Item2))
-                .ToList(),
+            AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
         }).ToList();
         if (onlyNotInCollection)
         {

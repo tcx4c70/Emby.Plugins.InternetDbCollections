@@ -63,7 +63,10 @@ class ImdbChartCollector : ICollector
             .Select((item, idx) => new CollectionItem
             {
                 Order = idx + 1,
-                Id = GetImdbId(item),
+                Ids =
+                {
+                    { "imdb", GetImdbId(item) },
+                },
                 Type = GetItemType(item),
             })
             .ToList();
@@ -73,7 +76,6 @@ class ImdbChartCollector : ICollector
         {
             Name = name,
             Description = description,
-            ProviderNames = new[] { "Imdb" },
             Items = collectionItems,
         };
     }

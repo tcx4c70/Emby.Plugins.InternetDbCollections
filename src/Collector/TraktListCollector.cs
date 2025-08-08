@@ -54,7 +54,6 @@ public class TraktListCollector : ICollector
         {
             Name = name,
             Description = description,
-            ProviderNames = new[] { "Imdb" },
             Items = collectionItems,
         };
     }
@@ -81,7 +80,10 @@ public class TraktListCollector : ICollector
         return new CollectionItem
         {
             Order = order,
-            Id = id,
+            Ids =
+            {
+                { "imdb",  id },
+            },
             Type = type,
         };
     }

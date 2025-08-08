@@ -12,7 +12,5 @@ public class CollectionItemList
 
     public bool EnableCollections { get; set; }
 
-    public IEnumerable<string> ProviderNames { get; set; } = new List<string>();
-
     public IEnumerable<CollectionItem> Items { get; set; } = new List<CollectionItem>();
 }

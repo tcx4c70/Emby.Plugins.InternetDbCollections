@@ -52,7 +52,10 @@ class ImdbListCollector : ICollector
             .Select((item, idx) => new CollectionItem
             {
                 Order = idx + 1,
-                Id = item["listItem"]["id"].ToString(),
+                Ids =
+                {
+                    { "imdb", item["listItem"]["id"].ToString() },
+                },
                 Type = GetItemType(item),
             })
             .ToList();
@@ -61,7 +64,6 @@ class ImdbListCollector : ICollector
         {
             Name = name,
             Description = description,
-            ProviderNames = new[] { "imdb" },
             Items = collectionItems,
         };
     }

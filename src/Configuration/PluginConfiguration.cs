@@ -6,6 +6,8 @@ public class PluginConfiguration : BasePluginConfiguration
 {
     public string MdbListApiKey { get; set; } = string.Empty;
 
+    public string TraktClientId { get; set; } = string.Empty;
+
     public CollectorConfiguration[] Collectors { get; set; } =
     {
         new CollectorConfiguration

@@ -27,6 +27,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             e.preventDefault();
             loading.show();
             var mdbListApiKey = view.querySelector('.txtMdbListApiKey').value.trim();
+            var traktClientId = view.querySelector('.txtTraktClientId').value.trim();
             if (instance.config.Collectors.some(collector => collector.Type === 'MDB List') && mdbListApiKey === '') {
                 loading.hide();
                 require(['confirm'], function (confirm) {
@@ -39,8 +40,21 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 });
                 return false;
             }
+            if (instance.config.Collectors.some(collector => collector.Type === 'Trakt List') && traktClientId === '') {
+                loading.hide();
+                require(['confirm'], function (confirm) {
+                    confirm({
+                        title: 'Trakt Client ID Required',
+                        text: 'You have configured a Trakt List collector, but have not provided a Client ID. Please provide a valid Client ID to use this collector.',
+                        confirmText: 'OK',
+                        primary: 'cancel'
+                    });
+                });
+                return false;
+            }
 
             instance.config.MdbListApiKey = mdbListApiKey;
+            instance.config.TraktClientId = traktClientId;
             ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(Dashboard.processServerConfigurationUpdateResult);
             return false;
         });
@@ -56,6 +70,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var instance = this;
 
         instance.view.querySelector('.txtMdbListApiKey').value = pluginConfig.MdbListApiKey || '';
+        instance.view.querySelector('.txtTraktClientId').value = pluginConfig.TraktClientId || '';
 
         instance.loadCollectors(pluginConfig);
     }
@@ -133,6 +148,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                     <select id="collectorType" name="collectorType" is="emby-select" label="Type:">\
                         <option value="IMDb Chart" ' + (collectorType === 'IMDb Chart' ? 'selected' : '') + '>IMDb Chart</option>\
                         <option value="IMDb List" ' + (collectorType === 'IMDb List' ? 'selected' : '') + '>IMDb List</option>\
+                        <option value="Trakt List" ' + (collectorType === 'Trakt List' ? 'selected' : '') + '>Trakt List</option>\
                         <option value="MDB List" ' + (collectorType === 'MDB List' ? 'selected' : '') + '>MDB List</option>\
                     </select>\
                 </div>';

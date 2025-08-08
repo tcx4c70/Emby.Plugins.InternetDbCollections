@@ -49,6 +49,8 @@ class CollectorBuilder
                 return new CollectorWithConfig(new ImdbChartCollector(collectorConfig.Id, _logger), collectorConfig);
             case CollectorType.ImdbList:
                 return new CollectorWithConfig(new ImdbListCollector(collectorConfig.Id, _logger), collectorConfig);
+            case CollectorType.TraktList:
+                return new CollectorWithConfig(new TraktListCollector(collectorConfig.Id, _config.TraktClientId, _logger), collectorConfig);
             case CollectorType.MdbList:
                 return new CollectorWithConfig(new MdbListCollector(collectorConfig.Id, _config.MdbListApiKey, _logger), collectorConfig);
             default:

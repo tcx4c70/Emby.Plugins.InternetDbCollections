@@ -43,6 +43,8 @@ public class MdbListCollector : ICollector
 
         var name = list["name"].GetValue<string>();
         var description = list["description"].GetValue<string>();
+        var username = list["username"].GetValue<string>();
+        var slug = list["slug"].GetValue<string>();
         _logger.Info("Parsed MDB list '{0}' name: {1}", _listId, name);
         _logger.Info("Parsed MDB list '{0}' description: {1}", _listId, description);
 
@@ -79,7 +81,7 @@ public class MdbListCollector : ICollector
                 //    slash (first provider ID for the provider).
                 // Thanksfully, MDB List can handle the escaped slash "%2f" between username and listname correctly. So
                 // let escape it!
-                { CollectorType.MdbList.ToProviderName(), Uri.EscapeDataString(_listId) },
+                { CollectorType.MdbList.ToProviderName(), Uri.EscapeDataString($"{username}/{slug}") },
             },
             Items = collectionItems,
         };

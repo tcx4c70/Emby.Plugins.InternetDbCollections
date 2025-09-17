@@ -1,4 +1,4 @@
-namespace Empy.Plugins.InternetDbCollections.ExternalIds;
+namespace Emby.Plugins.InternetDbCollections.ExternalIds;
 
 using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities;

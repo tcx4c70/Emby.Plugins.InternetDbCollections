@@ -1,14 +1,14 @@
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Common;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
+using Emby.Plugins.InternetDbCollections.Models.Trakt;
 using MediaBrowser.Model.Logging;
 
 public class TraktListCollector : ICollector
@@ -37,60 +37,29 @@ public class TraktListCollector : ICollector
         var listResponse = await _httpClient.GetStringAsync($"/lists/{_listId}", cancellationToken);
         _logger.Debug("Received Trakt list '{0}' data, parsing...", _listId);
 
-        var list = JsonNode.Parse(listResponse);
-        var name = list["name"].GetValue<string>();
-        var description = list["description"].GetValue<string>();
-        var id = list["ids"]["trakt"].GetValue<int>();
-        _logger.Info("Parsed Trakt list '{0}' name: {1}", _listId, name);
-        _logger.Info("Parsed Trakt list '{0}' description: {1}", _listId, description);
+        var list = JsonSerializer.Deserialize<TraktList>(listResponse);
+        _logger.Info("Parsed Trakt list '{0}' name: {1}", _listId, list.Name);
+        _logger.Info("Parsed Trakt list '{0}' description: {1}", _listId, list.Description);
 
         _logger.Debug("Fetching items for Trakt list '{0}'...", _listId);
         var itemsResponse = await _httpClient.GetStringAsync($"/lists/{_listId}/items", cancellationToken);
         _logger.Debug("Received items for Trakt list '{0}', parsing...", _listId);
 
-        var items = JsonNode.Parse(itemsResponse).AsArray();
-        var collectionItems = items.Select(ToCollectionItem).ToList();
+        var collectionItems =
+            JsonSerializer.Deserialize<List<TraktItem>>(itemsResponse)
+            .Select(TraktExtensions.ToCollectionItem)
+            .ToList();
         _logger.Info("Parsed Trakt List '{0}' items: {1} items", _listId, collectionItems.Count);
 
         return new CollectionItemList
         {
-            Name = name,
-            Description = description,
+            Name = list.Name,
+            Description = list.Description,
             Ids =
             {
-                { CollectorType.TraktList.ToProviderName(), id.ToString() },
+                { CollectorType.TraktList.ToProviderName(), list.Ids.Trakt.ToString() },
             },
             Items = collectionItems,
-        };
-    }
-
-    private CollectionItem ToCollectionItem(JsonNode item)
-    {
-        var order = item["rank"].GetValue<int>();
-        string id;
-        string type;
-        switch (item["type"].GetValue<string>())
-        {
-            case "movie":
-                type = nameof(Movie);
-                id = item["movie"]["ids"]["imdb"].GetValue<string>();
-                break;
-            case "show":
-                type = nameof(Series);
-                id = item["show"]["ids"]["imdb"].GetValue<string>();
-                break;
-            default:
-                throw new ArgumentException($"Unknown Trakt item type: {item["type"].GetValue<string>()}");
-        }
-
-        return new CollectionItem
-        {
-            Order = order,
-            Ids =
-            {
-                { "imdb",  id },
-            },
-            Type = type,
         };
     }
 }

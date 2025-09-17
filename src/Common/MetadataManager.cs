@@ -110,7 +110,7 @@ public class MetadataManager
             // MediaTypes = new[] { MediaType.Video },
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
-            ExcludeTags = onlyNotHasTag ? new [] { itemList.Name } : Array.Empty<string>(),
+            ExcludeTags = onlyNotHasTag ? new[] { itemList.Name } : Array.Empty<string>(),
         });
         _logger.Info("Found {0} items in library, start to add tag '{1}'", items.Length, itemList.Name);
 

@@ -4,12 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json.Nodes;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Common;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
+using Emby.Plugins.InternetDbCollections.Models.MdbList;
 using MediaBrowser.Model.Logging;
 
 public class MdbListCollector : ICollector
@@ -33,43 +33,32 @@ public class MdbListCollector : ICollector
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
         _logger.Debug("Fetching MDB list '{0}' data...", _listId);
-        var list = JsonNode.Parse(await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken)).AsArray().FirstOrDefault();
+        var listResponse = await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken);
+        // var list = JsonNode.Parse(await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken)).AsArray().FirstOrDefault();
         _logger.Debug("Received MDB list '{0}' data, parsing...", _listId);
+        var list =  JsonSerializer.Deserialize<List<MdbList>>(listResponse).FirstOrDefault();
         if (list is null)
         {
             _logger.Warn($"List with ID '{_listId}' not found.");
             throw new ArgumentException($"List with ID '{_listId}' not found.", _listId);
         }
-
-        var name = list["name"].GetValue<string>();
-        var description = list["description"].GetValue<string>();
-        var username = list["username"].GetValue<string>();
-        var slug = list["slug"].GetValue<string>();
-        _logger.Info("Parsed MDB list '{0}' name: {1}", _listId, name);
-        _logger.Info("Parsed MDB list '{0}' description: {1}", _listId, description);
+        _logger.Info("Parsed MDB list '{0}' name: {1}", _listId, list.Name);
+        _logger.Info("Parsed MDB list '{0}' description: {1}", _listId, list.Description);
 
         _logger.Debug("Fetching items for MDB list '{0}'...", _listId);
-        var items = await ListItemsAsync(cancellationToken);
+        var items = ListItemsAsync(cancellationToken);
         _logger.Debug("Received items for MDB list '{0}', parsing...", _listId);
 
         var collectionItems =
-            items
-            .Select(item => new CollectionItem
-            {
-                Order = item["rank"].GetValue<int>(),
-                Ids =
-                {
-                    { "imdb", item["imdb_id"].GetValue<string>() },
-                },
-                Type = GetItemType(item["mediatype"].GetValue<string>()),
-            })
-            .ToList();
+            await items
+            .Select(MdbListExtensions.ToCollectionItem)
+            .ToListAsync(cancellationToken);
         _logger.Info("Parsed MDB List '{0}' items: {1} items", _listId, collectionItems.Count);
 
         return new CollectionItemList
         {
-            Name = name,
-            Description = description,
+            Name = list.Name,
+            Description = list.Description,
             Ids =
             {
                 // We need to escape _listId here because:
@@ -81,19 +70,18 @@ public class MdbListCollector : ICollector
                 //    slash (first provider ID for the provider).
                 // Thanksfully, MDB List can handle the escaped slash "%2f" between username and listname correctly. So
                 // let escape it!
-                { CollectorType.MdbList.ToProviderName(), Uri.EscapeDataString($"{username}/{slug}") },
+                { CollectorType.MdbList.ToProviderName(), Uri.EscapeDataString($"{list.UserName}/{list.Slug}") },
             },
             Items = collectionItems,
         };
     }
 
-    // TODO: IAsyncEnumerable?
-    private async Task<IEnumerable<JsonNode>> ListItemsAsync(CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<MdbListItem> ListItemsAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         int offset = 0;
         int limit = 100;
         bool hasMore = true;
-        IEnumerable<JsonNode> items = Enumerable.Empty<JsonNode>();
+
         while (hasMore)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -101,8 +89,11 @@ public class MdbListCollector : ICollector
             var response = await _httpClient.GetAsync($"/lists/{_listId}/items?offset={offset}&limit={limit}&apikey={_apikey}", cancellationToken);
             response.EnsureSuccessStatusCode();
             var data = await response.Content.ReadAsStringAsync(cancellationToken);
-            var batchItems = JsonNode.Parse(data);
-            items = items.Concat(batchItems["movies"].AsArray()).Concat(batchItems["shows"].AsArray());
+            var batchItems = JsonSerializer.Deserialize<MdbListListItemsResponse>(data);
+            foreach (var item in batchItems.Movies.Concat(batchItems.Shows))
+            {
+                yield return item;
+            }
 
             if (response.Headers.TryGetValues("x-has-more", out var hasMoreValues) && hasMoreValues.Any())
             {
@@ -113,18 +104,7 @@ public class MdbListCollector : ICollector
                 throw new InvalidOperationException("Response does not contain 'x-has-more' header.");
             }
 
-            offset += limit;
+            offset += batchItems.Movies.Count + batchItems.Shows.Count;
         }
-        return items;
-    }
-
-    private string GetItemType(string type)
-    {
-        return type switch
-        {
-            "movie" => nameof(Movie),
-            "show" => nameof(Series),
-            _ => throw new NotSupportedException($"Unsupported item type: {type}")
-        };
     }
 }

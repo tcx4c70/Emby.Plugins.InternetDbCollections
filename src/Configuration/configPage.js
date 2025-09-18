@@ -242,7 +242,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
             loading.hide();
             dialogHelper.close(dlg);
-            instance.loadConfig(instance.config);
+            instance.loadCollectors(instance.config);
         });
 
         dialogHelper.open(dlg);
@@ -280,7 +280,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             }).then(function () {
                 loading.show();
                 instance.config.Collectors.splice(collectorIndex, 1);
-                instance.loadConfig(instance.config);
+                instance.loadCollectors(instance.config);
                 loading.hide();
             });
         });

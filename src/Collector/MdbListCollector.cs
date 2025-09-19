@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Common;
 using Emby.Plugins.InternetDbCollections.Models.MdbList;
+using Emby.Plugins.InternetDbCollections.Utils;
 using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;

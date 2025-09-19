@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.Plugins.InternetDbCollections.Common;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using Emby.Plugins.InternetDbCollections.Models.Trakt;
 using MediaBrowser.Model.Logging;
 

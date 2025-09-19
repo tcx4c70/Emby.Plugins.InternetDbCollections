@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.Plugins.InternetDbCollections.Common;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;

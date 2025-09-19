@@ -1,6 +1,6 @@
 using System;
 
-namespace Emby.Plugins.InternetDbCollections.Common;
+namespace Emby.Plugins.InternetDbCollections.Models.Collection;
 
 public static class CollectorType
 {

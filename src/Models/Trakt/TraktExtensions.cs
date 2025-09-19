@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Emby.Plugins.InternetDbCollections.Collector;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 

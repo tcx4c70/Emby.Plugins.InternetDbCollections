@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Emby.Plugins.InternetDbCollections.Collector;
+namespace Emby.Plugins.InternetDbCollections.Models.Collection;
 
 public class CollectionItemList
 {

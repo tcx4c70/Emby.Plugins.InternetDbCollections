@@ -1,4 +1,4 @@
-using Emby.Plugins.InternetDbCollections.Common;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;

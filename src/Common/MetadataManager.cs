@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Emby.Plugins.InternetDbCollections.Collector;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using Emby.Plugins.InternetDbCollections.Utils;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;

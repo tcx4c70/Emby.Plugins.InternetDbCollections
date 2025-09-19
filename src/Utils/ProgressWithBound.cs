@@ -1,6 +1,6 @@
 using System;
 
-namespace Emby.Plugins.InternetDbCollections.Common;
+namespace Emby.Plugins.InternetDbCollections.Utils;
 
 class ProgressWithBound : IProgress<double>
 {

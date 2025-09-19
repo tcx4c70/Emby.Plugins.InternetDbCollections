@@ -1,11 +1,10 @@
-namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
-
 using System;
 using System.Collections.Generic;
 using Emby.Plugins.InternetDbCollections.Collector;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 
+namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
 
 public static class TraktExtensions
 {

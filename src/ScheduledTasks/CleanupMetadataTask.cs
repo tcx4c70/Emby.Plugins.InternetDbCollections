@@ -1,5 +1,3 @@
-namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +8,8 @@ using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
+
+namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
 class CleanupMetadataTask : IScheduledTask
 {

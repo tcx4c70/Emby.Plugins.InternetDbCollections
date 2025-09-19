@@ -1,7 +1,7 @@
-namespace Emby.Plugins.InternetDbCollections.Common;
-
 using System.Collections.Generic;
 using MediaBrowser.Controller.Entities;
+
+namespace Emby.Plugins.InternetDbCollections.Common;
 
 public class BaseItemComparer : IEqualityComparer<BaseItem>
 {

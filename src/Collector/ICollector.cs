@@ -1,8 +1,7 @@
-namespace Emby.Plugins.InternetDbCollections.Collector;
-
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+
+namespace Emby.Plugins.InternetDbCollections.Collector;
 
 public interface ICollector
 {

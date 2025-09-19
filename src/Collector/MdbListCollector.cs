@@ -1,5 +1,3 @@
-namespace Emby.Plugins.InternetDbCollections.Collector;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +9,8 @@ using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Common;
 using Emby.Plugins.InternetDbCollections.Models.MdbList;
 using MediaBrowser.Model.Logging;
+
+namespace Emby.Plugins.InternetDbCollections.Collector;
 
 public class MdbListCollector : ICollector
 {
@@ -34,9 +34,8 @@ public class MdbListCollector : ICollector
     {
         _logger.Debug("Fetching MDB list '{0}' data...", _listId);
         var listResponse = await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken);
-        // var list = JsonNode.Parse(await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken)).AsArray().FirstOrDefault();
         _logger.Debug("Received MDB list '{0}' data, parsing...", _listId);
-        var list =  JsonSerializer.Deserialize<List<MdbList>>(listResponse).FirstOrDefault();
+        var list = JsonSerializer.Deserialize<List<MdbList>>(listResponse).FirstOrDefault();
         if (list is null)
         {
             _logger.Warn($"List with ID '{_listId}' not found.");

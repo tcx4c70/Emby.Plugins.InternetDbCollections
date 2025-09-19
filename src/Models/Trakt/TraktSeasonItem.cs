@@ -1,6 +1,6 @@
-namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
-
 using System.Text.Json.Serialization;
+
+namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
 
 public class TraktSeasonItem
 {

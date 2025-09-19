@@ -1,6 +1,6 @@
-namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
-
 using System.Text.Json.Serialization;
+
+namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
 
 public class TraktItem
 {
@@ -14,7 +14,7 @@ public class TraktItem
     public TraktItemType Type { get; set; }
 
     [JsonPropertyName("movie")]
-    public TraktMovieItem? Movie { get; set; } 
+    public TraktMovieItem? Movie { get; set; }
 
     [JsonPropertyName("show")]
     public TraktShowItem? Show { get; set; }

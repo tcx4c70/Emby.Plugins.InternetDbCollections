@@ -1,7 +1,7 @@
-namespace Emby.Plugins.InternetDbCollections.Configuration;
-
 using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Model.Plugins;
+
+namespace Emby.Plugins.InternetDbCollections.Configuration;
 
 public class PluginConfiguration : BasePluginConfiguration
 {

@@ -1,6 +1,6 @@
-namespace Emby.Plugins.InternetDbCollections.Models.MdbList;
-
 using System.Text.Json.Serialization;
+
+namespace Emby.Plugins.InternetDbCollections.Models.MdbList;
 
 public class MdbList
 {

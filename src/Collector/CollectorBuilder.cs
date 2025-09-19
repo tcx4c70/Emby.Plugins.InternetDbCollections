@@ -1,11 +1,11 @@
-namespace Emby.Plugins.InternetDbCollections.Collector;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Emby.Plugins.InternetDbCollections.Common;
 using Emby.Plugins.InternetDbCollections.Configuration;
 using MediaBrowser.Model.Logging;
+
+namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class CollectorBuilder
 {

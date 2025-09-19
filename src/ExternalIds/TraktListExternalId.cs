@@ -1,9 +1,9 @@
-namespace Emby.Plugins.InternetDbCollections.ExternalIds;
-
 using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
+
+namespace Emby.Plugins.InternetDbCollections.ExternalIds;
 
 public class TraktListExternalId : IExternalId
 {

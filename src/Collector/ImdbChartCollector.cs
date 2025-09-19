@@ -1,5 +1,3 @@
-namespace Emby.Plugins.InternetDbCollections.Collector;
-
 using System;
 using System.Linq;
 using System.Net.Http;
@@ -10,6 +8,8 @@ using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
+
+namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class ImdbChartCollector : ICollector
 {

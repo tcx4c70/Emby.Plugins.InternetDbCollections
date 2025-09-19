@@ -1,5 +1,3 @@
-namespace Emby.Plugins.InternetDbCollections.Common;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +8,8 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
+
+namespace Emby.Plugins.InternetDbCollections.Common;
 
 public class MetadataManager
 {

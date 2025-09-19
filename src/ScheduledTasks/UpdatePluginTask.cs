@@ -1,5 +1,3 @@
-namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +16,8 @@ using MediaBrowser.Model.Activity;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
+
+namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
 class UpdatePluginTask : IScheduledTask
 {

@@ -1,8 +1,8 @@
-namespace Emby.Plugins.InternetDbCollections.Collector;
-
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Configuration;
+
+namespace Emby.Plugins.InternetDbCollections.Collector;
 
 public class CollectorWithConfig : ICollector
 {

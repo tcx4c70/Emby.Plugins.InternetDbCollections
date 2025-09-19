@@ -1,5 +1,6 @@
-namespace Emby.Plugins.InternetDbCollections;
-
+using System;
+using System.Collections.Generic;
+using System.IO;
 using Emby.Plugins.InternetDbCollections.Configuration;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
@@ -7,9 +8,8 @@ using MediaBrowser.Model.Drawing;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
-using System;
-using System.Collections.Generic;
-using System.IO;
+
+namespace Emby.Plugins.InternetDbCollections;
 
 public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
 {

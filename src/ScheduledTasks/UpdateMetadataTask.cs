@@ -1,14 +1,14 @@
-namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
-
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Common;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+
+namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
 class UpdateMetadataTask : IScheduledTask
 {

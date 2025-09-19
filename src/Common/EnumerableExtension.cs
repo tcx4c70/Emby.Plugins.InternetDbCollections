@@ -1,7 +1,7 @@
-namespace Emby.Plugins.InternetDbCollections.Common;
-
 using System.Collections.Generic;
 using System.Linq;
+
+namespace Emby.Plugins.InternetDbCollections.Common;
 
 public static class EnumerableExtension
 {

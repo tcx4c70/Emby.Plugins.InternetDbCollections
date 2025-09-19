@@ -1,5 +1,3 @@
-namespace Emby.Plugins.InternetDbCollections.Collector;
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +8,8 @@ using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Common;
 using Emby.Plugins.InternetDbCollections.Models.Trakt;
 using MediaBrowser.Model.Logging;
+
+namespace Emby.Plugins.InternetDbCollections.Collector;
 
 public class TraktListCollector : ICollector
 {

@@ -123,6 +123,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var collectorEnabled = true;
         var collectorEnableTags = true;
         var collectorEnableCollections = true;
+        var submitBtnText = 'Add';
         if (collectorIndex !== null && collectorIndex !== undefined) {
             var collectorConfig = instance.config.Collectors[collectorIndex];
             title = 'Edit Collector';
@@ -133,6 +134,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             collectorEnabled = collectorConfig.Enabled;
             collectorEnableTags = collectorConfig.EnableTags;
             collectorEnableCollections = collectorConfig.EnableCollections;
+            submitBtnText = 'Save';
         }
 
         html += '<div class="formDialogHeader">';
@@ -207,7 +209,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
         html += '<div class="formDialogFooter">\
                     <button is="emby-button" type="submit" class="raised button-submit block formDialogFooterItem">\
-                        <span>Add</span>\
+                        <span>' + submitBtnText + '</span>\
                     </button>\
                 </div>';
 

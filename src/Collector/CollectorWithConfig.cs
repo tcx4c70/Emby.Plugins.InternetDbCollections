@@ -28,6 +28,8 @@ public class CollectorWithConfig : ICollector
         return itemList;
     }
 
+    public CollectorConfiguration Config => _config;
+
     public override string ToString()
     {
         return $"{{Type: {_config.Type}, Id: {_config.Id}, Name: {_config.Name}, Enabled: {_config.Enabled}, EnableTags: {_config.EnableTags}, EnableCollections: {_config.EnableCollections}}}";

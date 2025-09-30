@@ -119,6 +119,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var collectorType = 'IMDb Chart';
         var collectorId = '';
         var collectorName = '';
+        var collectorSchedule = '0 0 1 * *';
         var collectorEnabled = true;
         var collectorEnableTags = true;
         var collectorEnableCollections = true;
@@ -128,6 +129,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             collectorType = collectorConfig.Type;
             collectorId = collectorConfig.Id;
             collectorName = collectorConfig.Name || '';
+            collectorSchedule = collectorConfig.Schedule || '0 0 1 * *';
             collectorEnabled = collectorConfig.Enabled;
             collectorEnableTags = collectorConfig.EnableTags;
             collectorEnableCollections = collectorConfig.EnableCollections;
@@ -165,6 +167,17 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                     <div class="flex align-items-center">\
                         <div class="flex-grow">\
                             <input is="emby-input" id="collectorName" name="collectorName" label="Name:" autocomplete="off" ' + (collectorName !== '' ? 'value="' + collectorName + '"' : '') + '/>\
+                        </div>\
+                    </div>\
+                </div>';
+
+        html += '<div class="inputContainer">\
+                    <div class="flex align-items-center">\
+                        <div class="flex-grow">\
+                            <input is="emby-input" id="collectorSchedule" name="collectorSchedule" label="Cron schedule:" autocomplete="off" ' + (collectorSchedule !== '' ? 'value="' + collectorSchedule + '"' : '') + '/>\
+                            <div class="fieldDescription">\
+                                Generate a cron expression from <a is="emby-linkbutton" class="button-link" href="https://crontab.cronhub.io/" target="_blank">Cronhub</a>.\
+                            </div>\
                         </div>\
                     </div>\
                 </div>';
@@ -218,6 +231,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             var type = dlg.querySelector('#collectorType').value;
             var id = dlg.querySelector('#collectorId').value;
             var name = dlg.querySelector('#collectorName').value;
+            var schedule = dlg.querySelector('#collectorSchedule').value;
             var enabled = dlg.querySelector('#collectorEnabled').checked;
             var enableTags = dlg.querySelector('#collectorEnableTags').checked;
             var enableCollections = dlg.querySelector('#collectorEnableCollections').checked;
@@ -227,6 +241,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 collector.Type = type;
                 collector.Id = id.trim();
                 collector.Name = name.trim();
+                collector.Schedule = schedule.trim();
                 collector.Enabled = enabled;
                 collector.EnableTags = enableTags;
                 collector.EnableCollections = enableCollections;
@@ -235,6 +250,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 instance.config.Collectors[collectorIndex].Type = type;
                 instance.config.Collectors[collectorIndex].Id = id.trim();
                 instance.config.Collectors[collectorIndex].Name = name.trim();
+                instance.config.Collectors[collectorIndex].Schedule = schedule.trim();
                 instance.config.Collectors[collectorIndex].Enabled = enabled;
                 instance.config.Collectors[collectorIndex].EnableTags = enableTags;
                 instance.config.Collectors[collectorIndex].EnableCollections = enableCollections;

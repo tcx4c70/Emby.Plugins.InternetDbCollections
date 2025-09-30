@@ -34,12 +34,14 @@ class UpdateMetadataTask : IScheduledTask
     {
         await Task.Yield();
 
+        var now = DateTime.UtcNow;
         _logger.Info("Start task {0}", Name);
         progress?.Report(0.0);
 
         var collectors = new CollectorBuilder()
             .UseConfig(Plugin.Instance.Configuration)
             .UseLogger(_logger)
+            .EnableCron()
             .Build();
         var metadataManager = new MetadataManager(_logger, _libraryManager);
         double step = collectors.Count == 0 ? 100.0 : 100.0 / collectors.Count;
@@ -52,6 +54,7 @@ class UpdateMetadataTask : IScheduledTask
             {
                 var itemList = await collector.CollectAsync(cancellationToken);
                 await metadataManager.UpdateMetadataAsync(itemList, new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+                collector.Config.LastCollected = now;
             }
             catch (Exception ex)
             {
@@ -61,6 +64,7 @@ class UpdateMetadataTask : IScheduledTask
             currentProgress += step;
         }
 
+        Plugin.Instance.SaveConfiguration();
         _logger.Info("Finish Task {0}", Name);
         progress?.Report(100.0);
     }
@@ -70,7 +74,7 @@ class UpdateMetadataTask : IScheduledTask
         yield return new TaskTriggerInfo
         {
             Type = TaskTriggerInfo.TriggerInterval,
-            IntervalTicks = TimeSpan.FromDays(30).Ticks,
+            IntervalTicks = TimeSpan.FromHours(1).Ticks,
         };
     }
 }

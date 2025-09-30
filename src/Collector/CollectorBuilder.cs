@@ -11,6 +11,7 @@ class CollectorBuilder
 {
     private PluginConfiguration _config;
     private ILogger _logger;
+    private bool _enableCron = false;
 
     public CollectorBuilder UseConfig(PluginConfiguration config)
     {
@@ -24,8 +25,18 @@ class CollectorBuilder
         return this;
     }
 
-    public List<ICollector> Build()
+    public CollectorBuilder EnableCron()
     {
+        _enableCron = true;
+        return this;
+    }
+
+    public List<CollectorWithConfig> Build()
+    {
+        if (_config == null)
+        {
+            throw new InvalidOperationException("Configuration must be set before building collectors");
+        }
         if (_logger == null)
         {
             throw new InvalidOperationException("Logger must be set before building collectors");
@@ -37,26 +48,33 @@ class CollectorBuilder
             .ToList();
     }
 
-    private ICollector BuildOne(CollectorConfiguration collectorConfig)
+    private CollectorWithConfig BuildOne(CollectorConfiguration collectorConfig)
     {
-        if (!collectorConfig.Enabled)
+        if (!collectorConfig.ShouldCollectNow(_enableCron))
         {
             return null;
         }
 
+        ICollector collector;
         switch (collectorConfig.Type)
         {
             case CollectorType.ImdbChart:
-                return new CollectorWithConfig(new ImdbChartCollector(collectorConfig.Id, _logger), collectorConfig);
+                collector = new ImdbChartCollector(collectorConfig.Id, _logger);
+                break;
             case CollectorType.ImdbList:
-                return new CollectorWithConfig(new ImdbListCollector(collectorConfig.Id, _logger), collectorConfig);
+                collector = new ImdbListCollector(collectorConfig.Id, _logger);
+                break;
             case CollectorType.TraktList:
-                return new CollectorWithConfig(new TraktListCollector(collectorConfig.Id, _config.TraktClientId, _logger), collectorConfig);
+                collector = new TraktListCollector(collectorConfig.Id, _config.TraktClientId, _logger);
+                break;
             case CollectorType.MdbList:
-                return new CollectorWithConfig(new MdbListCollector(collectorConfig.Id, _config.MdbListApiKey, _logger), collectorConfig);
+                collector = new MdbListCollector(collectorConfig.Id, _config.MdbListApiKey, _logger);
+                break;
             default:
                 _logger.Warn("Unknown collector type `{0}`, skip", collectorConfig.Type);
                 return null;
         }
+
+        return new CollectorWithConfig(collector, collectorConfig);
     }
 }

@@ -1,0 +1,9 @@
+This plugin is licensed under the MIT License.
+
+Due to the limitations of Emby plugin system, we need to bundle all dependencies
+except the Emby ones into a single DLL. This plugin bundles the following
+dependencies via ILRepack:
+
+1. Cronos 0.11.1
+   License: MIT License
+   Project URL: https://github.com/HangfireIO/Cronos

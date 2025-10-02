@@ -45,8 +45,8 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbIm
 
     public IEnumerable<PluginPageInfo> GetPages()
     {
-        return new[]
-        {
+        return
+        [
             new PluginPageInfo
             {
                 Name = Name,
@@ -57,6 +57,6 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbIm
                 Name = $"{Name}js",
                 EmbeddedResourcePath = $"{GetType().Namespace}.Configuration.configPage.js",
             }
-        };
+        ];
     }
 }

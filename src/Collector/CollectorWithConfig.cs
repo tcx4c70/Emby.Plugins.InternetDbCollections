@@ -5,33 +5,24 @@ using Emby.Plugins.InternetDbCollections.Models.Collection;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-public class CollectorWithConfig : ICollector
+public class CollectorWithConfig(ICollector innerCollector, CollectorConfiguration config) : ICollector
 {
-    private readonly ICollector _innerCollector;
-    private readonly CollectorConfiguration _config;
-
-    public CollectorWithConfig(ICollector innerCollector, CollectorConfiguration config)
-    {
-        _innerCollector = innerCollector;
-        _config = config;
-    }
-
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        var itemList = await _innerCollector.CollectAsync(cancellationToken);
-        itemList.EnableTags = _config.EnableTags;
-        itemList.EnableCollections = _config.EnableCollections;
-        if (!string.IsNullOrWhiteSpace(_config.Name))
+        var itemList = await innerCollector.CollectAsync(cancellationToken);
+        itemList.EnableTags = Config.EnableTags;
+        itemList.EnableCollections = Config.EnableCollections;
+        if (!string.IsNullOrWhiteSpace(Config.Name))
         {
-            itemList.Name = _config.Name;
+            itemList.Name = Config.Name;
         }
         return itemList;
     }
 
-    public CollectorConfiguration Config => _config;
+    public CollectorConfiguration Config { get; } = config;
 
     public override string ToString()
     {
-        return $"{{Type: {_config.Type}, Id: {_config.Id}, Name: {_config.Name}, Enabled: {_config.Enabled}, EnableTags: {_config.EnableTags}, EnableCollections: {_config.EnableCollections}}}";
+        return $"{{Type: {Config.Type}, Id: {Config.Id}, Name: {Config.Name}, Enabled: {Config.Enabled}, EnableTags: {Config.EnableTags}, EnableCollections: {Config.EnableCollections}}}";
     }
 }

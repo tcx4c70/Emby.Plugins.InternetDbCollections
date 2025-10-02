@@ -13,47 +13,36 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-public class MdbListCollector : ICollector
+public class MdbListCollector(string listId, string apikey, ILogger logger) : ICollector
 {
-    private readonly ILogger _logger;
-    private readonly string _listId;
-    private readonly string _apikey;
-    private readonly HttpClient _httpClient;
-
-    public MdbListCollector(string listId, string apikey, ILogger logger)
+    private readonly HttpClient _httpClient = new()
     {
-        _listId = listId;
-        _apikey = apikey;
-        _logger = logger;
-        _httpClient = new HttpClient
-        {
-            BaseAddress = new Uri("https://api.mdblist.com"),
-        };
-    }
+        BaseAddress = new Uri("https://api.mdblist.com"),
+    };
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        _logger.Debug("Fetching MDB list '{0}' data...", _listId);
-        var listResponse = await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken);
-        _logger.Debug("Received MDB list '{0}' data, parsing...", _listId);
+        logger.Debug("Fetching MDB list '{0}' data...", listId);
+        var listResponse = await _httpClient.GetStringAsync($"/lists/{listId}?apikey={apikey}", cancellationToken);
+        logger.Debug("Received MDB list '{0}' data, parsing...", listId);
         var list = JsonSerializer.Deserialize<List<MdbList>>(listResponse)?.FirstOrDefault();
         if (list is null)
         {
-            _logger.Warn($"List with ID '{_listId}' not found.");
-            throw new ArgumentException($"List with ID '{_listId}' not found.", _listId);
+            logger.Warn($"List with ID '{listId}' not found.");
+            throw new ArgumentException($"List with ID '{listId}' not found.", listId);
         }
-        _logger.Info("Parsed MDB list '{0}' name: {1}", _listId, list.Name);
-        _logger.Info("Parsed MDB list '{0}' description: {1}", _listId, list.Description);
+        logger.Info("Parsed MDB list '{0}' name: {1}", listId, list.Name);
+        logger.Info("Parsed MDB list '{0}' description: {1}", listId, list.Description);
 
-        _logger.Debug("Fetching items for MDB list '{0}'...", _listId);
+        logger.Debug("Fetching items for MDB list '{0}'...", listId);
         var items = ListItemsAsync(cancellationToken);
-        _logger.Debug("Received items for MDB list '{0}', parsing...", _listId);
+        logger.Debug("Received items for MDB list '{0}', parsing...", listId);
 
         var collectionItems =
             await items
             .Select(MdbListExtensions.ToCollectionItem)
             .ToListAsync(cancellationToken);
-        _logger.Info("Parsed MDB List '{0}' items: {1} items", _listId, collectionItems.Count);
+        logger.Info("Parsed MDB List '{0}' items: {1} items", listId, collectionItems.Count);
 
         return new CollectionItemList
         {
@@ -86,7 +75,7 @@ public class MdbListCollector : ICollector
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var response = await _httpClient.GetAsync($"/lists/{_listId}/items?offset={offset}&limit={limit}&apikey={_apikey}", cancellationToken);
+            var response = await _httpClient.GetAsync($"/lists/{listId}/items?offset={offset}&limit={limit}&apikey={apikey}", cancellationToken);
             response.EnsureSuccessStatusCode();
             var stream = response.Content.ReadAsStream(cancellationToken);
             var batchItems = await JsonSerializer.DeserializeAsync<MdbListListItemsResponse>(stream, cancellationToken: cancellationToken) ?? throw new InvalidOperationException("Failed to deserialize response.");

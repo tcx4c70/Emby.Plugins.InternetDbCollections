@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
@@ -12,16 +11,9 @@ using MediaBrowser.Model.Tasks;
 
 namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
-class CleanupMetadataTask : IScheduledTask
+class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
 {
-    private readonly ILogger _logger;
-    private readonly ILibraryManager _libraryManager;
-
-    public CleanupMetadataTask(ILibraryManager libraryManager)
-    {
-        _logger = Plugin.Instance.Logger;
-        _libraryManager = libraryManager;
-    }
+    private readonly ILogger _logger = Plugin.Instance.Logger;
 
     public string Name => "Cleanup Metadata";
 
@@ -42,7 +34,7 @@ class CleanupMetadataTask : IScheduledTask
             .UseConfig(Plugin.Instance.Configuration)
             .UseLogger(_logger)
             .Build();
-        var metadataManager = new MetadataManager(_logger, _libraryManager);
+        var metadataManager = new MetadataManager(_logger, libraryManager);
         double step = collectors.Count == 0 ? 100.0 : 100.0 / collectors.Count;
         double currentProgress = 0.0;
         foreach (var collector in collectors)
@@ -68,6 +60,6 @@ class CleanupMetadataTask : IScheduledTask
 
     public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
     {
-        return Enumerable.Empty<TaskTriggerInfo>();
+        return [];
     }
 }

@@ -10,7 +10,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public string TraktClientId { get; set; } = string.Empty;
 
     public CollectorConfiguration[] Collectors { get; set; } =
-    {
+    [
         new CollectorConfiguration
         {
             Type = CollectorType.ImdbChart,
@@ -34,5 +34,5 @@ public class PluginConfiguration : BasePluginConfiguration
             EnableTags = true,
             EnableCollections = false,
         },
-    };
+    ];
 }

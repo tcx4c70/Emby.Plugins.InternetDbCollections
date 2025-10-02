@@ -6,8 +6,8 @@ namespace Emby.Plugins.InternetDbCollections.Models.MdbList;
 public class MdbListListItemsResponse
 {
     [JsonPropertyName("movies")]
-    public List<MdbListItem> Movies { get; set; } = new();
+    public List<MdbListItem> Movies { get; set; } = [];
 
     [JsonPropertyName("shows")]
-    public List<MdbListItem> Shows { get; set; } = new();
+    public List<MdbListItem> Shows { get; set; } = [];
 }

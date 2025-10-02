@@ -11,39 +11,31 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-public class TraktListCollector : ICollector
+public class TraktListCollector(string listId, string clientId, ILogger logger) : ICollector
 {
-    private readonly ILogger _logger;
-    private readonly string _listId;
-    private readonly string _clientId;
-    private readonly HttpClient _httpClient;
-
-    public TraktListCollector(string listId, string clientId, ILogger logger)
+    private readonly HttpClient _httpClient = new()
     {
-        _listId = listId;
-        _clientId = clientId;
-        _logger = logger;
-        _httpClient = new HttpClient
+        BaseAddress = new Uri("https://api.trakt.tv"),
+        DefaultRequestHeaders =
         {
-            BaseAddress = new Uri("https://api.trakt.tv"),
-        };
-        _httpClient.DefaultRequestHeaders.Add("trakt-api-version", "2");
-        _httpClient.DefaultRequestHeaders.Add("trakt-api-key", _clientId);
-    }
+            { "trakt-api-version", "2" },
+            { "trakt-api-key", clientId },
+        },
+    };
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        _logger.Debug("Fetching Trakt list '{0}' data...", _listId);
-        var listResponse = await _httpClient.GetStringAsync($"/lists/{_listId}", cancellationToken);
-        _logger.Debug("Received Trakt list '{0}' data, parsing...", _listId);
+        logger.Debug("Fetching Trakt list '{0}' data...", listId);
+        var listResponse = await _httpClient.GetStringAsync($"/lists/{listId}", cancellationToken);
+        logger.Debug("Received Trakt list '{0}' data, parsing...", listId);
 
-        var list = JsonSerializer.Deserialize<TraktList>(listResponse) ?? throw new Exception($"Failed to parse Trakt list '{_listId}' data.");
-        _logger.Info("Parsed Trakt list '{0}' name: {1}", _listId, list.Name);
-        _logger.Info("Parsed Trakt list '{0}' description: {1}", _listId, list.Description);
+        var list = JsonSerializer.Deserialize<TraktList>(listResponse) ?? throw new Exception($"Failed to parse Trakt list '{listId}' data.");
+        logger.Info("Parsed Trakt list '{0}' name: {1}", listId, list.Name);
+        logger.Info("Parsed Trakt list '{0}' description: {1}", listId, list.Description);
 
-        _logger.Debug("Fetching items for Trakt list '{0}'...", _listId);
-        var itemsResponse = await _httpClient.GetStreamAsync($"/lists/{_listId}/items", cancellationToken);
-        _logger.Debug("Received items for Trakt list '{0}', parsing...", _listId);
+        logger.Debug("Fetching items for Trakt list '{0}'...", listId);
+        var itemsResponse = await _httpClient.GetStreamAsync($"/lists/{listId}/items", cancellationToken);
+        logger.Debug("Received items for Trakt list '{0}', parsing...", listId);
 
         var items = JsonSerializer.DeserializeAsyncEnumerable<TraktItem>(itemsResponse, cancellationToken: cancellationToken);
         var collectionItems =
@@ -51,7 +43,7 @@ public class TraktListCollector : ICollector
             .Cast<TraktItem>()
             .Select(TraktExtensions.ToCollectionItem)
             .ToListAsync(cancellationToken);
-        _logger.Info("Parsed Trakt List '{0}' items: {1} items", _listId, collectionItems.Count);
+        logger.Info("Parsed Trakt List '{0}' items: {1} items", listId, collectionItems.Count);
 
         return new CollectionItemList
         {

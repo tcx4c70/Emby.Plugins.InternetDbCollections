@@ -19,34 +19,17 @@ using MediaBrowser.Model.Tasks;
 
 namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
-class UpdatePluginTask : IScheduledTask
+class UpdatePluginTask(
+    IApplicationHost applicationHost,
+    IApplicationPaths applicationPaths,
+    IActivityManager activityManager,
+    IServerApplicationHost serverApplicationHost,
+    ILocalizationManager localizationManager,
+    IHttpClient httpClient) : IScheduledTask
 {
     private static string PluginAssemblyName => Assembly.GetExecutingAssembly().GetName().Name + ".dll";
 
-    private readonly ILogger _logger;
-    private readonly IApplicationHost _applicationHost;
-    private readonly IApplicationPaths _applicationPaths;
-    private readonly IActivityManager _activityManager;
-    private readonly IServerApplicationHost _serverApplicationHost;
-    private readonly ILocalizationManager _localizationManager;
-    private readonly IHttpClient _httpClient;
-
-    public UpdatePluginTask(
-        IApplicationHost applicationHost,
-        IApplicationPaths applicationPaths,
-        IActivityManager activityManager,
-        IServerApplicationHost serverApplicationHost,
-        ILocalizationManager localizationManager,
-        IHttpClient httpClient)
-    {
-        _applicationHost = applicationHost;
-        _applicationPaths = applicationPaths;
-        _activityManager = activityManager;
-        _serverApplicationHost = serverApplicationHost;
-        _localizationManager = localizationManager;
-        _httpClient = httpClient;
-        _logger = Plugin.Instance.Logger;
-    }
+    private readonly ILogger _logger = Plugin.Instance.Logger;
 
     public string Name => "Update Plugin";
 
@@ -63,7 +46,7 @@ class UpdatePluginTask : IScheduledTask
 
         try
         {
-            await using var response = await _httpClient.Get(new HttpRequestOptions
+            await using var response = await httpClient.Get(new HttpRequestOptions
             {
                 Url = "https://api.github.com/repos/tcx4c70/Emby.Plugins.InternetDbCollections/releases/latest",
                 AcceptHeader = "application/json",
@@ -86,7 +69,7 @@ class UpdatePluginTask : IScheduledTask
                     throw new Exception($"Invalid URL for plugin asset: {url}");
                 }
 
-                await using var downloadResponse = await _httpClient.Get(new HttpRequestOptions
+                await using var downloadResponse = await httpClient.Get(new HttpRequestOptions
                 {
                     Url = url,
                     EnableDefaultUserAgent = true,
@@ -96,26 +79,26 @@ class UpdatePluginTask : IScheduledTask
                 await using var memoryStream = new MemoryStream();
                 await downloadResponse.CopyToAsync(memoryStream, cancellationToken).ConfigureAwait(false);
                 memoryStream.Seek(0, SeekOrigin.Begin);
-                var dllPath = Path.Combine(_applicationPaths.PluginsPath, PluginAssemblyName);
+                var dllPath = Path.Combine(applicationPaths.PluginsPath, PluginAssemblyName);
                 await using var fileStream = new FileStream(dllPath, FileMode.Create, FileAccess.Write);
                 await memoryStream.CopyToAsync(fileStream, 81920, cancellationToken).ConfigureAwait(false);
 
                 _logger.Info("Plugin update complete");
-                _activityManager.Create(new ActivityLogEntry
+                activityManager.Create(new ActivityLogEntry
                 {
-                    Name = string.Format(_localizationManager.GetLocalizedString("XUpdatedOnTo"), Category, remoteVersion, _serverApplicationHost.FriendlyName),
+                    Name = string.Format(localizationManager.GetLocalizedString("XUpdatedOnTo"), Category, remoteVersion, serverApplicationHost.FriendlyName),
                     Type = "PluginUpdateInstalled",
                     Overview = apiResult?.Body ?? string.Empty,
                     Severity = LogSeverity.Info,
                 });
-                _applicationHost.NotifyPendingRestart();
+                applicationHost.NotifyPendingRestart();
             }
         }
         catch (Exception ex)
         {
-            _activityManager.Create(new ActivityLogEntry
+            activityManager.Create(new ActivityLogEntry
             {
-                Name = string.Format(_localizationManager.GetLocalizedString("NameInstallFailedOn"), Category, _serverApplicationHost.FriendlyName),
+                Name = string.Format(localizationManager.GetLocalizedString("NameInstallFailedOn"), Category, serverApplicationHost.FriendlyName),
                 Type = "PluginUpdateFailed",
                 Overview = $"{ex.Message}\n{ex.StackTrace}",
                 Severity = LogSeverity.Error,
@@ -138,7 +121,7 @@ class UpdatePluginTask : IScheduledTask
     private static Version ParseVersion(string? v)
     {
         ArgumentNullException.ThrowIfNull(v);
-        return new Version(v.StartsWith("v") ? v[1..] : v);
+        return new Version(v.StartsWith('v') ? v[1..] : v);
     }
 
     private class ApiResponseInfo

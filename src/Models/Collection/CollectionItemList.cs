@@ -14,5 +14,5 @@ public class CollectionItemList
 
     public IDictionary<string, string> Ids = new Dictionary<string, string>();
 
-    public IEnumerable<CollectionItem> Items { get; set; } = new List<CollectionItem>();
+    public IEnumerable<CollectionItem> Items { get; set; } = [];
 }

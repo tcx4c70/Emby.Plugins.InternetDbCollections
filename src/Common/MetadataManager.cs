@@ -12,18 +12,10 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Common;
 
-public class MetadataManager
+public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
 {
-    private readonly ILogger _logger;
-    private readonly ILibraryManager _libraryManager;
-
-    public MetadataManager(
-        ILogger logger,
-        ILibraryManager libraryManager)
-    {
-        _logger = logger;
-        _libraryManager = libraryManager;
-    }
+    private readonly ILogger _logger = logger;
+    private readonly ILibraryManager _libraryManager = libraryManager;
 
     public async Task UpdateMetadataAsync(
         CollectionItemList itemList,
@@ -69,8 +61,8 @@ public class MetadataManager
         {
             // MediaTypes = new[] { MediaType.Video },
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-            Tags = new[] { itemList.Name },
-        }).ToList();
+            Tags = [itemList.Name],
+        }, cancellationToken).ToList();
         if (onlyNotInItemList)
         {
             var providerIds =
@@ -111,8 +103,8 @@ public class MetadataManager
             // MediaTypes = new[] { MediaType.Video },
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
-            ExcludeTags = onlyNotHasTag ? new[] { itemList.Name } : Array.Empty<string>(),
-        });
+            ExcludeTags = onlyNotHasTag ? [itemList.Name] : [],
+        }, cancellationToken);
         _logger.Info("Found {0} items in library, start to add tag '{1}'", items.Length, itemList.Name);
 
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
@@ -155,9 +147,9 @@ public class MetadataManager
     {
         var collections = _libraryManager.GetItemList(new InternalItemsQuery
         {
-            IncludeItemTypes = new[] { nameof(BoxSet) },
+            IncludeItemTypes = [nameof(BoxSet)],
             Name = itemList.Name,
-        });
+        }, cancellationToken);
         if (collections.Length == 0)
         {
             _logger.Debug("No collection with name '{0}' found, nothing to cleanup", itemList.Name);
@@ -175,8 +167,8 @@ public class MetadataManager
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-            CollectionIds = new[] { collection.InternalId },
-        }).ToList();
+            CollectionIds = [collection.InternalId],
+        }, cancellationToken).ToList();
         if (onlyNotInItemList)
         {
             var providerIds =
@@ -216,21 +208,21 @@ public class MetadataManager
         {
             IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
             AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
-        }).ToList();
+        }, cancellationToken).ToList();
         if (onlyNotInCollection)
         {
             var colls = _libraryManager.GetItemList(new InternalItemsQuery
             {
-                IncludeItemTypes = new[] { nameof(BoxSet) },
+                IncludeItemTypes = [nameof(BoxSet)],
                 Name = itemList.Name,
-            });
+            }, cancellationToken);
             if (colls.Length == 1)
             {
                 List<BaseItem> itemsInCollection = _libraryManager.GetItemList(new InternalItemsQuery
                 {
                     IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-                    CollectionIds = new[] { colls[0].InternalId },
-                }).ToList();
+                    CollectionIds = [colls[0].InternalId],
+                }, cancellationToken).ToList();
                 items = items.Except(itemsInCollection, new BaseItemComparer()).ToList();
             }
             else
@@ -253,9 +245,9 @@ public class MetadataManager
 
         var collections = _libraryManager.GetItemList(new InternalItemsQuery
         {
-            IncludeItemTypes = new[] { nameof(BoxSet) },
+            IncludeItemTypes = [nameof(BoxSet)],
             Name = itemList.Name,
-        });
+        }, cancellationToken);
         if (collections.Length == 1)
         {
             BaseItem collection = collections[0];

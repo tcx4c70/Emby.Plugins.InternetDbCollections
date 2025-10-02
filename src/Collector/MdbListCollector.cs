@@ -36,7 +36,7 @@ public class MdbListCollector : ICollector
         _logger.Debug("Fetching MDB list '{0}' data...", _listId);
         var listResponse = await _httpClient.GetStringAsync($"/lists/{_listId}?apikey={_apikey}", cancellationToken);
         _logger.Debug("Received MDB list '{0}' data, parsing...", _listId);
-        var list = JsonSerializer.Deserialize<List<MdbList>>(listResponse).FirstOrDefault();
+        var list = JsonSerializer.Deserialize<List<MdbList>>(listResponse)?.FirstOrDefault();
         if (list is null)
         {
             _logger.Warn($"List with ID '{_listId}' not found.");
@@ -88,8 +88,8 @@ public class MdbListCollector : ICollector
 
             var response = await _httpClient.GetAsync($"/lists/{_listId}/items?offset={offset}&limit={limit}&apikey={_apikey}", cancellationToken);
             response.EnsureSuccessStatusCode();
-            var data = await response.Content.ReadAsStringAsync(cancellationToken);
-            var batchItems = JsonSerializer.Deserialize<MdbListListItemsResponse>(data);
+            var stream = response.Content.ReadAsStream(cancellationToken);
+            var batchItems = await JsonSerializer.DeserializeAsync<MdbListListItemsResponse>(stream, cancellationToken: cancellationToken) ?? throw new InvalidOperationException("Failed to deserialize response.");
             foreach (var item in batchItems.Movies.Concat(batchItems.Shows))
             {
                 yield return item;

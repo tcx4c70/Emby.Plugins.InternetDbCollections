@@ -8,5 +8,5 @@ public class TraktSeasonItem
     public int Number { get; set; }
 
     [JsonPropertyName("ids")]
-    public TraktItemIds Ids { get; set; }
+    public TraktItemIds Ids { get; set; } = new();
 }

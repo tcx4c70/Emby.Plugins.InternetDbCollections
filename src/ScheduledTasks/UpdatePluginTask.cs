@@ -72,7 +72,7 @@ class UpdatePluginTask : IScheduledTask
             }).ConfigureAwait(false);
             var apiResult = await JsonSerializer.DeserializeAsync<ApiResponseInfo>(response, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version!;
             var remoteVersion = ParseVersion(apiResult?.TagName);
             if (currentVersion.CompareTo(remoteVersion) < 0)
             {
@@ -135,29 +135,30 @@ class UpdatePluginTask : IScheduledTask
         };
     }
 
-    private static Version ParseVersion(string v)
+    private static Version ParseVersion(string? v)
     {
+        ArgumentNullException.ThrowIfNull(v);
         return new Version(v.StartsWith("v") ? v[1..] : v);
     }
 
     private class ApiResponseInfo
     {
         [JsonPropertyName("tag_name")]
-        public string TagName { get; set; }
+        public required string TagName { get; set; }
 
         [JsonPropertyName("body")]
-        public string Body { get; set; }
+        public required string Body { get; set; }
 
         [JsonPropertyName("assets")]
-        public ApiAssetInfo[] Assets { get; set; }
+        public ApiAssetInfo[] Assets { get; set; } = [];
     }
 
     private class ApiAssetInfo
     {
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [JsonPropertyName("browser_download_url")]
-        public string BrowserDownloadUrl { get; set; }
+        public required string BrowserDownloadUrl { get; set; }
     }
 }

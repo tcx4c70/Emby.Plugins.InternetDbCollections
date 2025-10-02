@@ -9,9 +9,13 @@ namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class CollectorBuilder
 {
-    private PluginConfiguration _config;
-    private ILogger _logger;
+    private PluginConfiguration? _config;
+    private ILogger? _logger;
     private bool _enableCron = false;
+
+    public PluginConfiguration Config => _config ?? throw new InvalidOperationException("Configuration has not been set");
+
+    public ILogger Logger => _logger ?? throw new InvalidOperationException("Logger has not been set");
 
     public CollectorBuilder UseConfig(PluginConfiguration config)
     {
@@ -44,11 +48,11 @@ class CollectorBuilder
 
         return _config.Collectors
             .Select(BuildOne)
-            .Where(collector => collector != null)
+            .OfType<CollectorWithConfig>()
             .ToList();
     }
 
-    private CollectorWithConfig BuildOne(CollectorConfiguration collectorConfig)
+    private CollectorWithConfig? BuildOne(CollectorConfiguration collectorConfig)
     {
         if (!collectorConfig.ShouldCollectNow(_enableCron))
         {
@@ -59,19 +63,19 @@ class CollectorBuilder
         switch (collectorConfig.Type)
         {
             case CollectorType.ImdbChart:
-                collector = new ImdbChartCollector(collectorConfig.Id, _logger);
+                collector = new ImdbChartCollector(collectorConfig.Id, Logger);
                 break;
             case CollectorType.ImdbList:
-                collector = new ImdbListCollector(collectorConfig.Id, _logger);
+                collector = new ImdbListCollector(collectorConfig.Id, Logger);
                 break;
             case CollectorType.TraktList:
-                collector = new TraktListCollector(collectorConfig.Id, _config.TraktClientId, _logger);
+                collector = new TraktListCollector(collectorConfig.Id, Config.TraktClientId, Logger);
                 break;
             case CollectorType.MdbList:
-                collector = new MdbListCollector(collectorConfig.Id, _config.MdbListApiKey, _logger);
+                collector = new MdbListCollector(collectorConfig.Id, Config.MdbListApiKey, Logger);
                 break;
             default:
-                _logger.Warn("Unknown collector type `{0}`, skip", collectorConfig.Type);
+                Logger.Warn("Unknown collector type `{0}`, skip", collectorConfig.Type);
                 return null;
         }
 

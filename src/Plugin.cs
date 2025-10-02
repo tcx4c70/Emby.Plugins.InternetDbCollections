@@ -13,16 +13,18 @@ namespace Emby.Plugins.InternetDbCollections;
 
 public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
 {
-    public static Plugin Instance { get; private set; }
+    public static Plugin Instance => s_instance ?? throw new InvalidOperationException("Plugin instance not set");
 
     public readonly ILogger Logger;
 
     private readonly Guid _id = new("1B55EFD5-6080-4207-BCF8-DC2723C7AC10");
 
+    private static Plugin? s_instance;
+
     public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer, ILogManager logManager)
         : base(applicationPaths, xmlSerializer)
     {
-        Instance = this;
+        s_instance = this;
         Logger = logManager.GetLogger(Name);
         Logger.Info("Plugin Loaded");
     }
@@ -38,7 +40,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbIm
     public Stream GetThumbImage()
     {
         var type = GetType();
-        return type.Assembly.GetManifestResourceStream($"{type.Namespace}.Resources.thumb.png");
+        return type.Assembly.GetManifestResourceStream($"{type.Namespace}.Resources.thumb.png")!;
     }
 
     public IEnumerable<PluginPageInfo> GetPages()

@@ -36,7 +36,7 @@ class UpdateMetadataTask : IScheduledTask
 
         var now = DateTime.UtcNow;
         _logger.Info("Start task {0}", Name);
-        progress?.Report(0.0);
+        progress.Report(0.0);
 
         var collectors = new CollectorBuilder()
             .UseConfig(Plugin.Instance.Configuration)
@@ -66,7 +66,7 @@ class UpdateMetadataTask : IScheduledTask
 
         Plugin.Instance.SaveConfiguration();
         _logger.Info("Finish Task {0}", Name);
-        progress?.Report(100.0);
+        progress.Report(100.0);
     }
 
     public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()

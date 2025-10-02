@@ -20,15 +20,15 @@ public static class TraktExtensions
     public static IDictionary<string, string> ToCollectionItemIds(this TraktItemIds ids)
     {
         var dict = new Dictionary<string, string>();
-        if (ids.Imdb != null)
+        if (ids.Imdb is not null)
         {
             dict.Add("imdb", ids.Imdb);
         }
-        if (ids.Tmdb != null)
+        if (ids.Tmdb is not null)
         {
             dict.Add("tmdb", ids.Tmdb.Value.ToString());
         }
-        if (ids.Tvdb != null)
+        if (ids.Tvdb is not null)
         {
             dict.Add("tvdb", ids.Tvdb.Value.ToString());
         }
@@ -41,8 +41,8 @@ public static class TraktExtensions
         Type = item.Type.ToEmbyItemType(),
         Ids = item.Type switch
         {
-            TraktItemType.Movie => item.Movie.Ids.ToCollectionItemIds(),
-            TraktItemType.Show => item.Show.Ids.ToCollectionItemIds(),
+            TraktItemType.Movie => item.Movie!.Ids.ToCollectionItemIds(),
+            TraktItemType.Show => item.Show!.Ids.ToCollectionItemIds(),
             _ => throw new NotSupportedException($"Trakt item type '{item.Type}' is not supported"),
         }
     };

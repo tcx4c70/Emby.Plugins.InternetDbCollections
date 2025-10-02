@@ -18,6 +18,14 @@ public static class AsyncEnumerable
         }
     }
 
+    public static async IAsyncEnumerable<TResult> Cast<TResult>(this IAsyncEnumerable<object?> source)
+    {
+        await foreach (var item in source)
+        {
+            yield return (TResult)item!;
+        }
+    }
+
     public static async ValueTask<List<T>> ToListAsync<T>(this IAsyncEnumerable<T> source, CancellationToken cancellationToken = default)
     {
         var list = new List<T>();

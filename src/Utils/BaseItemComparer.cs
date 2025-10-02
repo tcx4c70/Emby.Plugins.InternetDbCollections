@@ -5,7 +5,7 @@ namespace Emby.Plugins.InternetDbCollections.Utils;
 
 public class BaseItemComparer : IEqualityComparer<BaseItem>
 {
-    public bool Equals(BaseItem x, BaseItem y)
+    public bool Equals(BaseItem? x, BaseItem? y)
     {
         if (ReferenceEquals(x, y))
         {

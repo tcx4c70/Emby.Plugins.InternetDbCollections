@@ -36,7 +36,7 @@ class CleanupMetadataTask : IScheduledTask
         await Task.Yield();
 
         _logger.Info("Start task {0}", Name);
-        progress?.Report(0.0);
+        progress.Report(0.0);
 
         var collectors = new CollectorBuilder()
             .UseConfig(Plugin.Instance.Configuration)
@@ -63,7 +63,7 @@ class CleanupMetadataTask : IScheduledTask
         }
 
         _logger.Info("Finish Task {0}", Name);
-        progress?.Report(100.0);
+        progress.Report(100.0);
     }
 
     public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()

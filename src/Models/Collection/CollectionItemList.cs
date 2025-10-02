@@ -4,7 +4,7 @@ namespace Emby.Plugins.InternetDbCollections.Models.Collection;
 
 public class CollectionItemList
 {
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     public string? Description { get; set; } = null;
 

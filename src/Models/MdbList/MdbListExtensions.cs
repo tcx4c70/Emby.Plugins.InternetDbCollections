@@ -23,7 +23,7 @@ public static class MdbListExtensions
         };
         if (item.TvdbId is not null)
         {
-            ids["tvdb"] = item.TvdbId.ToString();
+            ids["tvdb"] = item.TvdbId.Value.ToString();
         }
 
         return new CollectionItem

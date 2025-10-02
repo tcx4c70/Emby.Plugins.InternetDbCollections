@@ -5,13 +5,13 @@ namespace Emby.Plugins.InternetDbCollections.Models.Trakt;
 public class TraktList
 {
     [JsonPropertyName("name")]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     [JsonPropertyName("description")]
-    public string Description { get; set; }
+    public required string Description { get; set; }
 
     [JsonPropertyName("ids")]
-    public TraktListIds Ids { get; set; }
+    public TraktListIds Ids { get; set; } = new();
 }
 
 public class TraktListIds

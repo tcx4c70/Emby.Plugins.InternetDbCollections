@@ -14,7 +14,7 @@ public class MdbListItem
     public MdbListMediaType MediaType { get; set; }
 
     [JsonPropertyName("imdb_id")]
-    public string ImdbId { get; set; }
+    public required string ImdbId { get; set; }
 
     [JsonPropertyName("tvdb_id")]
     public int? TvdbId { get; set; }

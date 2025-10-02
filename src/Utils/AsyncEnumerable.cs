@@ -10,7 +10,7 @@ namespace Emby.Plugins.InternetDbCollections.Utils;
 // TODO: Switch to System.Linq.AsyncEnumerable after upgrade to .Net 10 (https://learn.microsoft.com/en-us/dotnet/core/compatibility/core-libraries/10.0/asyncenumerable)
 public static class AsyncEnumerable
 {
-    public static async IAsyncEnumerable<TResoult> Select<TSource, TResoult>(this IAsyncEnumerable<TSource> source, Func<TSource, TResoult> selector)
+    public static async IAsyncEnumerable<TResult> Select<TSource, TResult>(this IAsyncEnumerable<TSource> source, Func<TSource, TResult> selector)
     {
         await foreach (var item in source)
         {

@@ -251,7 +251,11 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         if (collections.Length == 1)
         {
             BaseItem collection = collections[0];
-            collection.Overview = itemList.Description ?? "";
+            if (!collection.IsFieldLocked(MetadataFields.Overview))
+            {
+                collection.Overview = itemList.Description ?? "";
+            }
+
             foreach (var (name, id) in itemList.Ids)
             {
                 collection.SetProviderId(name, id);

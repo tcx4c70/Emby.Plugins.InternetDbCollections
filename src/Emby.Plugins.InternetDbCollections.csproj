@@ -23,7 +23,7 @@
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.11.1" />
     <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.44" />
-    <PackageReference Include="MediaBrowser.Server.Core" Version="4.9.1.13-beta" />
+    <PackageReference Include="MediaBrowser.Server.Core" Version="4.9.1.80" />
   </ItemGroup>
 
 </Project>

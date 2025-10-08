@@ -74,6 +74,9 @@ class CollectorBuilder
             case CollectorType.MdbList:
                 collector = new MdbListCollector(collectorConfig.Id, Config.MdbListApiKey, Logger);
                 break;
+            case CollectorType.Letterboxd:
+                collector = new LetterboxdCollector(collectorConfig.Id, Logger);
+                break;
             default:
                 Logger.Warn("Unknown collector type `{0}`, skip", collectorConfig.Type);
                 return null;

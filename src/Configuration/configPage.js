@@ -154,6 +154,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                         <option value="IMDb List" ' + (collectorType === 'IMDb List' ? 'selected' : '') + '>IMDb List</option>\
                         <option value="Trakt List" ' + (collectorType === 'Trakt List' ? 'selected' : '') + '>Trakt List</option>\
                         <option value="MDB List" ' + (collectorType === 'MDB List' ? 'selected' : '') + '>MDB List</option>\
+                        <option value="Letterboxd" ' + (collectorType === 'Letterboxd' ? 'selected' : '') + '>Letterboxd</option>\
                     </select>\
                 </div>';
 

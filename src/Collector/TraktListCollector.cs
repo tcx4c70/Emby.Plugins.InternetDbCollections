@@ -18,6 +18,7 @@ public class TraktListCollector(string listId, string clientId, ILogger logger) 
         BaseAddress = new Uri("https://api.trakt.tv"),
         DefaultRequestHeaders =
         {
+            { "User-Agent", "EmbyServer" },
             { "trakt-api-version", "2" },
             { "trakt-api-key", clientId },
         },

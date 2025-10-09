@@ -35,33 +35,32 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
                 .Select(p => p.InnerText)
                 .Aggregate((a, b) => a + "\n" + b);
 
-            foreach (var item in listPage.DocumentNode.SelectNodes("//li[@class='posteritem numbered-list-item']"))
-            {
-                var reactNode = item.SelectSingleNode(".//div[@class='react-component']");
-                var id = reactNode.Attributes["data-film-id"].Value;
-                var slug = reactNode.Attributes["data-item-slug"].Value;
-                var rank = item.SelectSingleNode("./p[@class='list-number']").InnerText.Trim();
-
-                // TODO: It's very slow to fetch each movie detail page to get IMDb ID. Try to fetch all movie detail pages in parallel. Will it be blocked/throttled by Letterboxd?
-                var movieDoc = await web.LoadFromWebAsync($"{s_baseUrl}/film/{slug}/", cancellationToken);
-                var imdbLink = movieDoc.DocumentNode.SelectSingleNode("//a[string()='IMDb']");
-                var imdbId = imdbLink.Attributes["href"].Value.Split('/')[4];
-
-                items.Add(new CollectionItem()
+            var posterItems = listPage.DocumentNode.SelectNodes("//li[@class='posteritem numbered-list-item']");
+            var imdbIds = await Task.WhenAll(
+                posterItems
+                .Select(item => item.SelectSingleNode(".//div[@class='react-component']"))
+                .Select(node => node.Attributes["data-item-slug"].Value)
+                .Select(async slug =>
+                {
+                    var movieDetail = await web.LoadFromWebAsync($"{s_baseUrl}/film/{slug}/", cancellationToken);
+                    var imdbLink = movieDetail.DocumentNode.SelectSingleNode("//a[string()='IMDb']");
+                    var imdbId = imdbLink.Attributes["href"].Value.Split('/')[4];
+                    return imdbId;
+                }));
+            var pageItems = posterItems
+                .Select(posterItem => posterItem.SelectSingleNode("./p[@class='list-number']").InnerText.Trim())
+                .Zip(imdbIds, (rank, imdbId) => new CollectionItem()
                 {
                     Order = int.Parse(rank),
-                    // TODO: Letterboxd supports TV shows too, but all TV shows are with type film. e.g. https://letterboxd.com/slinkyman/list/letterboxds-top-100-highest-rated-documentary/
-                    // How can we detect them?
                     Type = nameof(Movie),
                     Ids = new Dictionary<string, string>()
                     {
                         { "imdb", imdbId },
-                        { "letterboxd", id },
-                    }
-                });
-            }
-
-            logger.Info("Parsed Letterboxd list '{0}' page {1}, found {2} items", listId, page, items.Count);
+                    },
+                })
+                .ToList();
+            items.AddRange(pageItems);
+            logger.Info("Parsed Letterboxd list '{0}' page {1}, found {2} items", listId, page, pageItems.Count);
 
             if (listPage.DocumentNode.SelectSingleNode("//a[@class='next']") == null)
             {

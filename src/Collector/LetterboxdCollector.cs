@@ -29,17 +29,28 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
             var listPage = await web.LoadFromWebAsync($"{s_baseUrl}/{listId}/page/{page}/", cancellationToken);
             logger.Debug("Received Letterboxd list '{0}' page {1} data, parsing...", listId, page);
 
-            name ??= listPage.DocumentNode.SelectSingleNode("//h1[@class='title-1 prettify']").InnerText;
-            description ??= listPage.DocumentNode
-                .SelectNodes("//div[@id='list-notes']/p")
-                .Select(p => p.InnerText)
-                .Aggregate((a, b) => a + "\n" + b);
+            name ??= ParseName(listPage);
+            description ??= ParseDescription(listPage);
 
-            var posterItems = listPage.DocumentNode.SelectNodes("//li[@class='posteritem numbered-list-item']");
+            var posterItems = listPage.DocumentNode.SelectNodes("//li[contains(concat(' ', normalize-space(@class), ' '), ' posteritem ')]");
+
+            IEnumerable<int> ranks;
+            if (posterItems.First().HasClass("numbered-list-item"))
+            {
+                ranks = posterItems.Select(item => int.Parse(item.SelectSingleNode("./p[@class='list-number']").InnerText.Trim()));
+            }
+            else
+            {
+                ranks = Enumerable.Range(items.Count + 1, posterItems.Count);
+            }
+
+            var letterboxdIds = posterItems
+                .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-film-id"].Value);
+
+            // Will it be blocked/throttled by Letterboxd?
             var imdbIds = await Task.WhenAll(
                 posterItems
-                .Select(item => item.SelectSingleNode(".//div[@class='react-component']"))
-                .Select(node => node.Attributes["data-item-slug"].Value)
+                .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-item-slug"].Value)
                 .Select(async slug =>
                 {
                     var movieDetail = await web.LoadFromWebAsync($"{s_baseUrl}/film/{slug}/", cancellationToken);
@@ -47,15 +58,20 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
                     var imdbId = imdbLink.Attributes["href"].Value.Split('/')[4];
                     return imdbId;
                 }));
-            var pageItems = posterItems
-                .Select(posterItem => posterItem.SelectSingleNode("./p[@class='list-number']").InnerText.Trim())
-                .Zip(imdbIds, (rank, imdbId) => new CollectionItem()
+
+            var pageItems =
+                ranks
+                .Zip(letterboxdIds, imdbIds)
+                .Select(tuple => new CollectionItem()
                 {
-                    Order = int.Parse(rank),
+                    Order = tuple.First,
+                    // TODO: Letterboxd supports TV shows too, but all TV shows are with type film. e.g. https://letterboxd.com/slinkyman/list/letterboxds-top-100-highest-rated-documentary/
+                    // How can we detect them?
                     Type = nameof(Movie),
                     Ids = new Dictionary<string, string>()
                     {
-                        { "imdb", imdbId },
+                        { "letterboxd", tuple.Second },
+                        { "imdb", tuple.Third },
                     },
                 })
                 .ToList();
@@ -80,5 +96,22 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
             },
             Items = items,
         };
+    }
+
+    private string ParseName(HtmlDocument doc)
+    {
+        var h1Node = doc.DocumentNode.SelectSingleNode("//h1[contains(concat(' ', normalize-space(@class), ' '), ' title-1 prettify ')]");
+        return h1Node is null ? throw new NotSupportedException($"Could not find list name for list {listId}") : h1Node.InnerText.Trim();
+    }
+
+    private string? ParseDescription(HtmlDocument doc)
+    {
+        var descriptionNode = doc.DocumentNode.SelectSingleNode("//div[@id='list-notes']") ?? // For long text
+            doc.DocumentNode.SelectSingleNode("//div[contains(concat(' ', normalize-space(@class), ' '), ' body-text ')]"); // For short text
+
+        return descriptionNode
+            ?.SelectNodes(".//p")
+            ?.Select(p => p.InnerText)
+            ?.Aggregate((a, b) => a + "\n" + b);
     }
 }

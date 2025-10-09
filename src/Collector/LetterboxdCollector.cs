@@ -92,7 +92,7 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
             Description = description ?? string.Empty,
             Ids =
             {
-                { CollectorType.Letterboxd.ToProviderName(), Uri.EscapeDataString(listId) },
+                { CollectorType.Letterboxd.ToProviderName(), listId.Replace('/', '\\') },
             },
             Items = items,
         };

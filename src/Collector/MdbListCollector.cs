@@ -54,12 +54,11 @@ public class MdbListCollector(string listId, string apikey, ILogger logger) : IC
                 // 1. _listId here actually is in format "{username}/{listname}"
                 // 2. MDB List website only supports url format "https://mdblist.com/lists/{username}/{listname}" but
                 //    doesn't support "https://mdblist.com/lists/{listid}"
-                // 3. Slash '/' has special meaning in Emby provider ID, which means 'or' to support multiple provider
-                //    IDs for a single provider. And Emby will only format external url with the part before the first
-                //    slash (first provider ID for the provider).
-                // Thanksfully, MDB List can handle the escaped slash "%2f" between username and listname correctly. So
-                // let escape it!
-                { CollectorType.MdbList.ToProviderName(), Uri.EscapeDataString($"{list.UserName}/{list.Slug}") },
+                // 3. Forward slash '/' has special meaning in Emby provider ID, which means 'or' to support multiple
+                //    provider IDs for a single provider. And Emby will only format external url with the part before
+                //    the first forward slash (first provider ID for the provider).
+                // Thanksfully, back slashes '\\' also work in browsers as an URL. So let use back slashes '\\'!
+                { CollectorType.MdbList.ToProviderName(), $"{list.UserName}\\{list.Slug}" },
             },
             Items = collectionItems,
         };

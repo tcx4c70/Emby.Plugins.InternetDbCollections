@@ -92,35 +92,38 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         return Task.CompletedTask;
     }
 
-    private Task AddTagsAsync(
+    private async Task AddTagsAsync(
         CollectionItemList itemList,
         IProgress<double> progress,
         bool onlyNotHasTag = true,
         CancellationToken cancellationToken = default)
     {
-        var items = _libraryManager.GetItemList(new InternalItemsQuery
-        {
-            // MediaTypes = new[] { MediaType.Video },
-            IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-            AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
-            ExcludeTags = onlyNotHasTag ? [itemList.Name] : [],
-        }, cancellationToken);
-        _logger.Info("Found {0} items in library, start to add tag '{1}'", items.Length, itemList.Name);
+        var items = await QueryItemsAsync(
+            itemList,
+            item =>
+            {
+                if (onlyNotHasTag)
+                {
+                    item.ExcludeTags = [itemList.Name];
+                }
+                return item;
+            },
+            cancellationToken);
+        _logger.Info("Found {0} items in library, start to add tag '{1}'", items.Count, itemList.Name);
 
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            progress.Report(100.0 * idx / items.Length);
+            progress.Report(100.0 * idx / items.Count);
             // TODO: Add tag "IMDb Top 250 #" + order? But it will generate lots of tags, and each tag has only one item
             item.Tags = item.Tags.Append(itemList.Name).ToArray();
             _libraryManager.UpdateItem(item, item, ItemUpdateType.MetadataEdit);
-            _logger.Debug("Add tag '{0}' to item '{1}' ({2}/{3})", itemList.Name, item.Name, idx + 1, items.Length);
+            _logger.Debug("Add tag '{0}' to item '{1}' ({2}/{3})", itemList.Name, item.Name, idx + 1, items.Count);
         }
 
-        _logger.Info("Added tag '{0}' to {1} items", itemList.Name, items.Length);
+        _logger.Info("Added tag '{0}' to {1} items", itemList.Name, items.Count);
         progress.Report(100);
-        return Task.CompletedTask;
     }
 
     private async Task UpdateCollectionAsync(
@@ -198,17 +201,13 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         return Task.CompletedTask;
     }
 
-    private Task AddCollectionAsync(
+    private async Task AddCollectionAsync(
         CollectionItemList itemList,
         IProgress<double> progress,
         bool onlyNotInCollection = true,
         CancellationToken cancellationToken = default)
     {
-        var items = _libraryManager.GetItemList(new InternalItemsQuery
-        {
-            IncludeItemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray(),
-            AnyProviderIdEquals = itemList.Items.SelectMany(item => item.Ids).ToList(),
-        }, cancellationToken).ToList();
+        var items = await QueryItemsAsync(itemList, cancellationToken: cancellationToken);
         if (onlyNotInCollection)
         {
             var colls = _libraryManager.GetItemList(new InternalItemsQuery
@@ -268,6 +267,32 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
             _logger.Warn("Found {0} collections with name '{1}', expected 1", collections.Length, itemList.Name);
         }
         progress.Report(100);
-        return Task.CompletedTask;
+    }
+
+    private async Task<List<BaseItem>> QueryItemsAsync(
+        CollectionItemList itemList,
+        Func<InternalItemsQuery, InternalItemsQuery>? queryBuilder = null,
+        CancellationToken cancellationToken = default)
+    {
+        var itemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray();
+        var providerIds = itemList.Items.SelectMany(item => item.Ids);
+        var queryTasks =
+            providerIds.Chunk(100)
+            .Select(batch =>
+                Task.Run(() =>
+                {
+                    var query = new InternalItemsQuery()
+                    {
+                        IncludeItemTypes = itemTypes,
+                        AnyProviderIdEquals = batch,
+                    };
+                    if (queryBuilder != null)
+                    {
+                        query = queryBuilder(query);
+                    }
+                    return _libraryManager.GetItemList(query, cancellationToken);
+                }));
+        var items = await Task.WhenAll(queryTasks);
+        return items.SelectMany(x => x).ToList();
     }
 }

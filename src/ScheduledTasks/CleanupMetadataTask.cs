@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
@@ -35,24 +36,11 @@ class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
             .UseLogger(_logger)
             .Build();
         var metadataManager = new MetadataManager(_logger, libraryManager);
-        double step = collectors.Count == 0 ? 100.0 : 100.0 / collectors.Count;
-        double currentProgress = 0.0;
-        foreach (var collector in collectors)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            try
-            {
-                var itemList = await collector.CollectAsync(cancellationToken);
-                await metadataManager.CleanupMetadataAsync(itemList, new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
-            }
-
-            currentProgress += step;
-        }
+        var observerProgress = new ObserverProgress<double>(progress);
+        var tasks =
+            collectors
+            .Select(collector => BuildCleanupMetadataTask(collector, metadataManager, observerProgress, cancellationToken));
+        await Task.WhenAll(tasks);
 
         _logger.Info("Finish Task {0}", Name);
         progress.Report(100.0);
@@ -61,5 +49,32 @@ class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
     public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
     {
         return [];
+    }
+
+    private async Task BuildCleanupMetadataTask(
+        CollectorWithConfig collector,
+        MetadataManager metadataManager,
+        ObserverProgress<double> progress,
+        CancellationToken cancellationToken = default)
+    {
+        var observableProgress = new ObservableProgress<double>();
+        observableProgress.ProgressChanged += progress.Report;
+        progress.AddObservable(observableProgress);
+
+        // Make it fully asynchronous
+        await Task.Yield();
+        try
+        {
+            var itemList = await collector.CollectAsync(cancellationToken);
+            await metadataManager.CleanupMetadataAsync(itemList, observableProgress, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
+        }
+        finally
+        {
+            observableProgress.Report(100.0);
+        }
     }
 }

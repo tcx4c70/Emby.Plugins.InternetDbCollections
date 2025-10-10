@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
@@ -37,25 +38,11 @@ class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
             .EnableCron()
             .Build();
         var metadataManager = new MetadataManager(_logger, libraryManager);
-        double step = collectors.Count == 0 ? 100.0 : 100.0 / collectors.Count;
-        double currentProgress = 0.0;
-        foreach (var collector in collectors)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            try
-            {
-                var itemList = await collector.CollectAsync(cancellationToken);
-                await metadataManager.UpdateMetadataAsync(itemList, new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
-                collector.Config.LastCollected = now;
-            }
-            catch (Exception ex)
-            {
-                _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
-            }
-
-            currentProgress += step;
-        }
+        var observerProgress = new ObserverProgress<double>(progress);
+        var tasks =
+            collectors
+            .Select(collector => BuildUpdateMetadataTask(collector, metadataManager, now, observerProgress, cancellationToken));
+        await Task.WhenAll(tasks);
 
         Plugin.Instance.SaveConfiguration();
         _logger.Info("Finish Task {0}", Name);
@@ -69,5 +56,34 @@ class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
             Type = TaskTriggerInfo.TriggerInterval,
             IntervalTicks = TimeSpan.FromHours(1).Ticks,
         };
+    }
+
+    private async Task BuildUpdateMetadataTask(
+        CollectorWithConfig collector,
+        MetadataManager metadataManager,
+        DateTime startTime,
+        ObserverProgress<double> progress,
+        CancellationToken cancellationToken = default)
+    {
+        var observableProgress = new ObservableProgress<double>();
+        observableProgress.ProgressChanged += progress.Report;
+        progress.AddObservable(observableProgress);
+
+        // Make it fully asynchronous
+        await Task.Yield();
+        try
+        {
+            var itemList = await collector.CollectAsync(cancellationToken);
+            await metadataManager.UpdateMetadataAsync(itemList, observableProgress, cancellationToken);
+            collector.Config.LastCollected = startTime;
+        }
+        catch (Exception ex)
+        {
+            _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
+        }
+        finally
+        {
+            observableProgress.Report(100.0);
+        }
     }
 }

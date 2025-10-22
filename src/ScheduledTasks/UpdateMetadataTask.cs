@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Common;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using Emby.Plugins.InternetDbCollections.Utils;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
@@ -37,12 +38,33 @@ class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
             .UseLogger(_logger)
             .EnableCron()
             .Build();
-        var metadataManager = new MetadataManager(_logger, libraryManager);
-        var observerProgress = new ObserverProgress<double>(progress);
+        var observerProgress = new ObserverProgress<double>(new ProgressWithBound(progress, 0, 50));
         var tasks =
             collectors
-            .Select(collector => BuildUpdateMetadataTask(collector, metadataManager, now, observerProgress, cancellationToken));
-        await Task.WhenAll(tasks);
+            .Select(collector => BuildUpdateMetadataTask(collector, now, observerProgress, cancellationToken));
+        var itemLists =
+            (await Task.WhenAll(tasks))
+            .OfType<CollectionItemList>()
+            .ToList();
+
+        var metadataManager = new MetadataManager(_logger, libraryManager);
+        var step = itemLists.Count == 0 ? 50.0 : 50.0 / itemLists.Count;
+        var currentProgress = 50.0;
+        foreach (var itemList in itemLists)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                await metadataManager.UpdateMetadataAsync(itemList, new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Error while updating metadata for item list {0}", ex, itemList.Name);
+            }
+
+            currentProgress += step;
+        }
 
         Plugin.Instance.SaveConfiguration();
         _logger.Info("Finish Task {0}", Name);
@@ -58,9 +80,8 @@ class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
         };
     }
 
-    private async Task BuildUpdateMetadataTask(
+    private async Task<CollectionItemList?> BuildUpdateMetadataTask(
         CollectorWithConfig collector,
-        MetadataManager metadataManager,
         DateTime startTime,
         ObserverProgress<double> progress,
         CancellationToken cancellationToken = default)
@@ -74,12 +95,13 @@ class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
         try
         {
             var itemList = await collector.CollectAsync(cancellationToken);
-            await metadataManager.UpdateMetadataAsync(itemList, observableProgress, cancellationToken);
             collector.Config.LastCollected = startTime;
+            return itemList;
         }
         catch (Exception ex)
         {
             _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
+            return null;
         }
         finally
         {

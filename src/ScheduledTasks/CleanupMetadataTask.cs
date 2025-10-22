@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Common;
+using Emby.Plugins.InternetDbCollections.Models.Collection;
 using Emby.Plugins.InternetDbCollections.Utils;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
@@ -35,12 +36,33 @@ class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
             .UseConfig(Plugin.Instance.Configuration)
             .UseLogger(_logger)
             .Build();
-        var metadataManager = new MetadataManager(_logger, libraryManager);
-        var observerProgress = new ObserverProgress<double>(progress);
+        var observerProgress = new ObserverProgress<double>(new ProgressWithBound(progress, 0, 50));
         var tasks =
             collectors
-            .Select(collector => BuildCleanupMetadataTask(collector, metadataManager, observerProgress, cancellationToken));
-        await Task.WhenAll(tasks);
+            .Select(collector => BuildCleanupMetadataTask(collector, observerProgress, cancellationToken));
+        var itemLists =
+            (await Task.WhenAll(tasks))
+            .OfType<CollectionItemList>()
+            .ToList();
+
+        var metadataManager = new MetadataManager(_logger, libraryManager);
+        var step = itemLists.Count == 0 ? 50.0 : 50.0 / itemLists.Count;
+        var currentProgress = 50.0;
+        foreach (var itemList in itemLists)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                await metadataManager.CleanupMetadataAsync(itemList, new ProgressWithBound(progress, currentProgress, currentProgress + step), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Error while cleaning up metadata for item list {0}", ex, itemList.Name);
+            }
+
+            currentProgress += step;
+        }
 
         _logger.Info("Finish Task {0}", Name);
         progress.Report(100.0);
@@ -51,9 +73,8 @@ class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
         return [];
     }
 
-    private async Task BuildCleanupMetadataTask(
+    private async Task<CollectionItemList?> BuildCleanupMetadataTask(
         CollectorWithConfig collector,
-        MetadataManager metadataManager,
         ObserverProgress<double> progress,
         CancellationToken cancellationToken = default)
     {
@@ -66,11 +87,12 @@ class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
         try
         {
             var itemList = await collector.CollectAsync(cancellationToken);
-            await metadataManager.CleanupMetadataAsync(itemList, observableProgress, cancellationToken);
+            return itemList;
         }
         catch (Exception ex)
         {
             _logger.ErrorException("Error while executing collector `{0}`", ex, collector.ToString());
+            return null;
         }
         finally
         {

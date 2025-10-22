@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
+using Emby.Plugins.InternetDbCollections.Utils;
 using HtmlAgilityPack;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Model.Logging;
@@ -26,7 +27,7 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
         {
             var url = $"{s_baseUrl}/{listId}/page/{page}/";
             logger.Debug("Fetching Letterboxd list '{0}' page {1} data from {2}", listId, page, url);
-            var listPage = await web.LoadFromWebAsync($"{s_baseUrl}/{listId}/page/{page}/", cancellationToken);
+            var listPage = await web.LoadFromWebAsync($"{s_baseUrl}/{listId}/page/{page}/", 10, cancellationToken);
             logger.Debug("Received Letterboxd list '{0}' page {1} data, parsing...", listId, page);
 
             name ??= ParseName(listPage);
@@ -47,13 +48,13 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
             var letterboxdIds = posterItems
                 .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-film-id"].Value);
 
-            // Will it be blocked/throttled by Letterboxd?
             var imdbIds = await Task.WhenAll(
                 posterItems
                 .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-item-slug"].Value)
                 .Select(async slug =>
                 {
-                    var movieDetail = await web.LoadFromWebAsync($"{s_baseUrl}/film/{slug}/", cancellationToken);
+                    var scraper = new HtmlWeb();
+                    var movieDetail = await scraper.LoadFromWebAsync($"{s_baseUrl}/film/{slug}/", 10, cancellationToken);
                     var imdbLink = movieDetail.DocumentNode.SelectSingleNode("//a[string()='IMDb']");
                     var imdbId = imdbLink.Attributes["href"].Value.Split('/')[4];
                     return imdbId;

@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
+using Emby.Plugins.InternetDbCollections.Utils;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
@@ -24,7 +25,7 @@ class ImdbListCollector(string listId, ILogger logger) : ICollector
 
         var url = string.Format(s_imdbListUrlTemplate, listId);
         logger.Debug("Fetching IMDb list '{0}' data from {1}", listId, url);
-        var response = await client.GetStringAsync(url, cancellationToken);
+        var response = await client.GetStringAsync(url, 10, cancellationToken: cancellationToken);
         logger.Debug("Received IMDb list '{0}' data, parsing...", listId);
 
         var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;

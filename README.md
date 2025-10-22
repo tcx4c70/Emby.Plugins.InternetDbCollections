@@ -49,7 +49,6 @@ You can configure the plugin through the Emby web interface under the plugins se
   - Douban (Maybe it's hard to support it since we really need to parse the HTML page and it's a little hard to introduce third-party library into an Emby plugin)
   - ...
 - Improvements when scraping datasource:
-  - Retry
   - Proxy support
 - Logging improvements:
   - Move some logs to debug level

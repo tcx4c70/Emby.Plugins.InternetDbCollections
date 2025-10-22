@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
+using Emby.Plugins.InternetDbCollections.Utils;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
@@ -31,7 +32,7 @@ class ImdbChartCollector(string chartId, ILogger logger) : ICollector
 
         var url = string.Format(s_imdbChartUrlTemplate, chartId);
         logger.Debug("Fetching IMDb chart '{0}' data from {1}", chartId, url);
-        var response = await client.GetStringAsync(url, cancellationToken);
+        var response = await client.GetStringAsync(url, 10, logger, cancellationToken: cancellationToken);
         logger.Debug("Received IMDb chart '{0}' data, parsing...", chartId);
 
         // Hope we can use third-party libraries to parse HTML in Emby plugin one day.

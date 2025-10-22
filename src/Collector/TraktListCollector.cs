@@ -27,7 +27,7 @@ public class TraktListCollector(string listId, string clientId, ILogger logger) 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
         logger.Debug("Fetching Trakt list '{0}' data...", listId);
-        var listResponse = await _httpClient.GetStringAsync($"/lists/{listId}", cancellationToken);
+        var listResponse = await _httpClient.GetStringAsync($"/lists/{listId}", 10, cancellationToken: cancellationToken);
         logger.Debug("Received Trakt list '{0}' data, parsing...", listId);
 
         var list = JsonSerializer.Deserialize<TraktList>(listResponse) ?? throw new Exception($"Failed to parse Trakt list '{listId}' data.");
@@ -35,7 +35,7 @@ public class TraktListCollector(string listId, string clientId, ILogger logger) 
         logger.Info("Parsed Trakt list '{0}' description: {1}", listId, list.Description);
 
         logger.Debug("Fetching items for Trakt list '{0}'...", listId);
-        var itemsResponse = await _httpClient.GetStreamAsync($"/lists/{listId}/items", cancellationToken);
+        var itemsResponse = await _httpClient.GetStreamAsync($"/lists/{listId}/items", 10, cancellationToken: cancellationToken);
         logger.Debug("Received items for Trakt list '{0}', parsing...", listId);
 
         var items = JsonSerializer.DeserializeAsyncEnumerable<TraktItem>(itemsResponse, cancellationToken: cancellationToken);

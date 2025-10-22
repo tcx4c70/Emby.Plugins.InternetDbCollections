@@ -13,9 +13,11 @@ using MediaBrowser.Model.Tasks;
 
 namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
-class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
+class UpdateMetadataTask(ILibraryManager libraryManager, ILogManager logManager) : IScheduledTask
 {
-    private readonly ILogger _logger = Plugin.Instance.Logger;
+    private static readonly string s_logName = $"{Plugin.Instance.Name}.{nameof(UpdateMetadataTask)}";
+
+    private readonly ILogger _logger = logManager.GetLogger(s_logName);
 
     public string Name => "Update Metadata";
 
@@ -35,7 +37,8 @@ class UpdateMetadataTask(ILibraryManager libraryManager) : IScheduledTask
 
         var collectors = new CollectorBuilder()
             .UseConfig(Plugin.Instance.Configuration)
-            .UseLogger(_logger)
+            .UseLogManager(logManager)
+            .UseLogPrefix(s_logName)
             .EnableCron()
             .Build();
         var observerProgress = new ObserverProgress<double>(new ProgressWithBound(progress, 0, 50));

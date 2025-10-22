@@ -10,12 +10,13 @@ namespace Emby.Plugins.InternetDbCollections.Collector;
 class CollectorBuilder
 {
     private PluginConfiguration? _config;
-    private ILogger? _logger;
+    private ILogManager? _logManager;
+    private string _logPrefix = Plugin.Instance.Name;
     private bool _enableCron = false;
 
     public PluginConfiguration Config => _config ?? throw new InvalidOperationException("Configuration has not been set");
 
-    public ILogger Logger => _logger ?? throw new InvalidOperationException("Logger has not been set");
+    public ILogManager LogManager => _logManager ?? throw new InvalidOperationException("LogManager has not been set");
 
     public CollectorBuilder UseConfig(PluginConfiguration config)
     {
@@ -23,9 +24,15 @@ class CollectorBuilder
         return this;
     }
 
-    public CollectorBuilder UseLogger(ILogger logger)
+    public CollectorBuilder UseLogManager(ILogManager logManager)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger), "Logger cannot be null");
+        _logManager = logManager ?? throw new ArgumentNullException(nameof(logManager), "LogManager cannot be null");
+        return this;
+    }
+
+    public CollectorBuilder UseLogPrefix(string logPrefix)
+    {
+        _logPrefix = logPrefix ?? throw new ArgumentNullException(nameof(logPrefix), "Log prefix cannot be null");
         return this;
     }
 
@@ -41,9 +48,9 @@ class CollectorBuilder
         {
             throw new InvalidOperationException("Configuration must be set before building collectors");
         }
-        if (_logger == null)
+        if (_logManager == null)
         {
-            throw new InvalidOperationException("Logger must be set before building collectors");
+            throw new InvalidOperationException("LogManager must be set before building collectors");
         }
 
         return _config.Collectors
@@ -60,25 +67,26 @@ class CollectorBuilder
         }
 
         ICollector collector;
+        string logName = $"{_logPrefix}.{collectorConfig.Type.ToProviderName()}.{collectorConfig.Id}";
+        var logger = LogManager.GetLogger(logName);
         switch (collectorConfig.Type)
         {
             case CollectorType.ImdbChart:
-                collector = new ImdbChartCollector(collectorConfig.Id, Logger);
+                collector = new ImdbChartCollector(collectorConfig.Id, logger);
                 break;
             case CollectorType.ImdbList:
-                collector = new ImdbListCollector(collectorConfig.Id, Logger);
+                collector = new ImdbListCollector(collectorConfig.Id, logger);
                 break;
             case CollectorType.TraktList:
-                collector = new TraktListCollector(collectorConfig.Id, Config.TraktClientId, Logger);
+                collector = new TraktListCollector(collectorConfig.Id, Config.TraktClientId, logger);
                 break;
             case CollectorType.MdbList:
-                collector = new MdbListCollector(collectorConfig.Id, Config.MdbListApiKey, Logger);
+                collector = new MdbListCollector(collectorConfig.Id, Config.MdbListApiKey, logger);
                 break;
             case CollectorType.Letterboxd:
-                collector = new LetterboxdCollector(collectorConfig.Id, Logger);
+                collector = new LetterboxdCollector(collectorConfig.Id, logger);
                 break;
             default:
-                Logger.Warn("Unknown collector type `{0}`, skip", collectorConfig.Type);
                 return null;
         }
 

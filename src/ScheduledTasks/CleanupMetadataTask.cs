@@ -13,9 +13,11 @@ using MediaBrowser.Model.Tasks;
 
 namespace Emby.Plugins.InternetDbCollections.ScheduledTasks;
 
-class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
+class CleanupMetadataTask(ILibraryManager libraryManager, ILogManager logManager) : IScheduledTask
 {
-    private readonly ILogger _logger = Plugin.Instance.Logger;
+    private static readonly string s_logName = $"{Plugin.Instance.Name}.{nameof(CleanupMetadataTask)}";
+
+    private readonly ILogger _logger = logManager.GetLogger(s_logName);
 
     public string Name => "Cleanup Metadata";
 
@@ -34,7 +36,8 @@ class CleanupMetadataTask(ILibraryManager libraryManager) : IScheduledTask
 
         var collectors = new CollectorBuilder()
             .UseConfig(Plugin.Instance.Configuration)
-            .UseLogger(_logger)
+            .UseLogManager(logManager)
+            .UseLogPrefix(s_logName)
             .Build();
         var observerProgress = new ObserverProgress<double>(new ProgressWithBound(progress, 0, 50));
         var tasks =

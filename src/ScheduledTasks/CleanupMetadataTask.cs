@@ -67,6 +67,7 @@ class CleanupMetadataTask(ILibraryManager libraryManager, ILogManager logManager
             currentProgress += step;
         }
 
+        Plugin.Instance.SaveConfiguration();
         _logger.Info("Finish Task {0}", Name);
         progress.Report(100.0);
     }
@@ -90,6 +91,8 @@ class CleanupMetadataTask(ILibraryManager libraryManager, ILogManager logManager
         try
         {
             var itemList = await collector.CollectAsync(cancellationToken);
+            // Reset LastCollected so that next time UpdateMetadataTask runs, it collects all items again
+            collector.Config.LastCollected = null;
             return itemList;
         }
         catch (Exception ex)

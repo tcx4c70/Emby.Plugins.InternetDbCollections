@@ -74,15 +74,17 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         }
         logger.Info("Found {0} items need to remove tag '{1}'", items.Count, itemList.Name);
 
+        var updatedItems = new List<BaseItem>();
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             progress.Report(100.0 * idx / items.Count);
             item.Tags = item.Tags.Where(tag => tag != itemList.Name).ToArray();
-            libraryManager.UpdateItem(item, item, ItemUpdateType.MetadataEdit);
+            updatedItems.Add(item);
             logger.Debug("Remove tag '{0}' from item '{1}' ({2}/{3})", itemList.Name, item.Name, idx + 1, items.Count);
         }
+        libraryManager.UpdateItems(updatedItems, null, ItemUpdateType.MetadataEdit, null, cancellationToken);
 
         logger.Info("Removed tag '{0}' from {1} items", itemList.Name, items.Count);
         progress.Report(100);
@@ -108,6 +110,7 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
             cancellationToken);
         logger.Info("Found {0} items in library, start to add tag '{1}'", items.Count, itemList.Name);
 
+        var updatedItems = new List<BaseItem>();
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -115,9 +118,10 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
             progress.Report(100.0 * idx / items.Count);
             // TODO: Add tag "IMDb Top 250 #" + order? But it will generate lots of tags, and each tag has only one item
             item.Tags = item.Tags.Append(itemList.Name).ToArray();
-            libraryManager.UpdateItem(item, item, ItemUpdateType.MetadataEdit);
+            updatedItems.Add(item);
             logger.Debug("Add tag '{0}' to item '{1}' ({2}/{3})", itemList.Name, item.Name, idx + 1, items.Count);
         }
+        libraryManager.UpdateItems(updatedItems, null, ItemUpdateType.MetadataEdit, null, cancellationToken);
 
         logger.Info("Added tag '{0}' to {1} items", itemList.Name, items.Count);
         progress.Report(100);
@@ -183,15 +187,17 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         }
         logger.Info("Found {0} items need to be removed from the BoxSet '{1}'", items.Count, itemList.Name);
 
+        var updatedItems = new List<BaseItem>();
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             progress.Report(100.0 * idx / items.Count);
             item.RemoveCollection(collection.InternalId);
-            libraryManager.UpdateItem(item, item, ItemUpdateType.MetadataEdit);
+            updatedItems.Add(item);
             logger.Debug("Remove item '{0}' from collection '{1}' ({2}/{3})", item.Name, itemList.Name, idx + 1, items.Count);
         }
+        libraryManager.UpdateItems(updatedItems, null, ItemUpdateType.MetadataEdit, null, cancellationToken);
 
         logger.Info("Removed {0} items from collection '{1}'", items.Count, itemList.Name);
         progress.Report(100);
@@ -228,15 +234,17 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         }
         logger.Info("Found {0} items in library, start to add them to collection '{1}'", items.Count, itemList.Name);
 
+        var updatedItems = new List<BaseItem>();
         foreach (var (idx, item) in items.Select((item, idx) => (idx, item)))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             progress.Report(100.0 * idx / items.Count);
             item.AddCollection(itemList.Name);
-            libraryManager.UpdateItem(item, item, ItemUpdateType.MetadataEdit);
+            updatedItems.Add(item);
             logger.Debug("Add item '{0}' to collection '{1}' ({2}/{3})", item.Name, itemList.Name, idx + 1, items.Count);
         }
+        libraryManager.UpdateItems(updatedItems, null, ItemUpdateType.MetadataEdit, null, cancellationToken);
         logger.Info("Added {0} items to collection '{1}'", items.Count, itemList.Name);
 
         var collections = libraryManager.GetItemList(new InternalItemsQuery

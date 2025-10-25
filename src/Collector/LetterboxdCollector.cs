@@ -21,7 +21,9 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
         var page = 1;
         string? name = null;
         string? description = null;
-        var items = new List<CollectionItem>();
+        var ranks = new List<int>();
+        var letterboxdIds = new List<string>();
+        var imdbIdTasks = new List<Task<string>>();
 
         while (true)
         {
@@ -35,20 +37,20 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
 
             var posterItems = listPage.DocumentNode.SelectNodes("//li[contains(concat(' ', normalize-space(@class), ' '), ' posteritem ')]");
 
-            IEnumerable<int> ranks;
             if (posterItems.First().HasClass("numbered-list-item"))
             {
-                ranks = posterItems.Select(item => int.Parse(item.SelectSingleNode("./p[@class='list-number']").InnerText.Trim()));
+                ranks.AddRange(posterItems.Select(item => int.Parse(item.SelectSingleNode("./p[@class='list-number']").InnerText.Trim())));
             }
             else
             {
-                ranks = Enumerable.Range(items.Count + 1, posterItems.Count);
+                ranks.AddRange(Enumerable.Range(ranks.Count + 1, posterItems.Count));
             }
 
-            var letterboxdIds = posterItems
-                .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-film-id"].Value);
+            letterboxdIds.AddRange(
+                posterItems
+                .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-film-id"].Value));
 
-            var imdbIds = await Task.WhenAll(
+            imdbIdTasks.AddRange(
                 posterItems
                 .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-item-slug"].Value)
                 .Select(async slug =>
@@ -60,24 +62,7 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
                     return imdbId;
                 }));
 
-            var pageItems =
-                ranks
-                .Zip(letterboxdIds, imdbIds)
-                .Select(tuple => new CollectionItem()
-                {
-                    Order = tuple.First,
-                    // TODO: Letterboxd supports TV shows too, but all TV shows are with type film. e.g. https://letterboxd.com/slinkyman/list/letterboxds-top-100-highest-rated-documentary/
-                    // How can we detect them?
-                    Type = nameof(Movie),
-                    Ids = new Dictionary<string, string>()
-                    {
-                        { "letterboxd", tuple.Second },
-                        { "imdb", tuple.Third },
-                    },
-                })
-                .ToList();
-            items.AddRange(pageItems);
-            logger.Info("Parsed Letterboxd list '{0}' page {1}, found {2} items", listId, page, pageItems.Count);
+            logger.Info("Parsed Letterboxd list '{0}' page {1}", listId, page);
 
             if (listPage.DocumentNode.SelectSingleNode("//a[@class='next']") == null)
             {
@@ -85,6 +70,24 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
             }
             page++;
         }
+
+        var imdbIds = await Task.WhenAll(imdbIdTasks);
+        var items =
+            ranks
+            .Zip(letterboxdIds, imdbIds)
+            .Select(tuple => new CollectionItem()
+            {
+                Order = tuple.First,
+                // TODO: Letterboxd supports TV shows too, but all TV shows are with type film. e.g. https://letterboxd.com/slinkyman/list/letterboxds-top-100-highest-rated-documentary/
+                // How can we detect them?
+                Type = nameof(Movie),
+                Ids = new Dictionary<string, string>()
+                {
+                    { "letterboxd", tuple.Second },
+                    { "imdb", tuple.Third },
+                },
+            })
+            .ToList();
 
         logger.Info("Completed parsing Letterboxd list '{0}', total {1} items", listId, items.Count);
         return new CollectionItemList()

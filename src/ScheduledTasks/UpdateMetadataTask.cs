@@ -50,6 +50,8 @@ class UpdateMetadataTask(ILibraryManager libraryManager, ILogManager logManager)
             .OfType<CollectionItemList>()
             .ToList();
 
+        _logger.Info("Collected {0} item lists from {1} collectors", itemLists.Count, collectors.Count);
+
         var metadataManager = new MetadataManager(_logger, libraryManager);
         var step = itemLists.Count == 0 ? 50.0 : 50.0 / itemLists.Count;
         var currentProgress = 50.0;

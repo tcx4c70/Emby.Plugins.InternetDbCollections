@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading;
@@ -12,6 +13,7 @@ public static class HttpClientExtensions
     {
         // Use Polly or Microsoft.Extensions.Http.Resilience?
         int sleepTime = 10;
+        var random = new Random();
         for (int i = 0; i < retryCount; i++)
         {
             try
@@ -24,7 +26,8 @@ public static class HttpClientExtensions
             {
                 logger?.ErrorException($"GET request to {requestUri} failed on attempt {i + 1}. Retrying in {sleepTime}ms.", ex);
                 await Task.Delay(sleepTime, cancellationToken).ConfigureAwait(false);
-                sleepTime *= 2;
+                sleepTime = Math.Min(sleepTime * 2, 10000);
+                sleepTime += random.Next(Math.Min(sleepTime / 2, 1000));
             }
         }
         throw new HttpRequestException($"Failed to GET {requestUri} after {retryCount} attempts.");
@@ -32,13 +35,13 @@ public static class HttpClientExtensions
 
     public static async Task<string> GetStringAsync(this HttpClient httpClient, string requestUri, int retryCount, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        var response = await httpClient.GetAsync(requestUri, retryCount, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetAsync(requestUri, retryCount, logger, cancellationToken: cancellationToken).ConfigureAwait(false);
         return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public static async Task<Stream> GetStreamAsync(this HttpClient httpClient, string requestUri, int retryCount, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        var response = await httpClient.GetAsync(requestUri, retryCount, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var response = await httpClient.GetAsync(requestUri, retryCount, logger, cancellationToken: cancellationToken).ConfigureAwait(false);
         return await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
     }
 }

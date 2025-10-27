@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ public static class HtmlWebExtensions
     {
         // Use Polly?
         int sleepTime = 10;
+        var random = new Random();
         for (int i = 0; i < retryCount; i++)
         {
             try
@@ -22,10 +24,11 @@ public static class HtmlWebExtensions
             catch (HttpRequestException ex) when (ex.IsRetryable())
             {
                 await Task.Delay(sleepTime, cancellationToken);
-                sleepTime *= 2;
+                sleepTime = Math.Min(sleepTime * 2, 10000);
+                sleepTime += random.Next(Math.Min(sleepTime / 2, 1000));
             }
         }
-        throw new HttpRequestException($"Fail to fetch after {retryCount} retries, last status code: {web.StatusCode}", inner: null, web.StatusCode);
+        throw new HttpRequestException($"Fail to fetch {url} after {retryCount} retries, last status code: {web.StatusCode}", inner: null, web.StatusCode);
     }
 
     public static HtmlWeb EnsureSuccessStatusCode(this HtmlWeb web)

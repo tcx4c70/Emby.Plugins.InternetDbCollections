@@ -69,14 +69,14 @@ class ImdbListCollector(string listId, ILogger logger) : ICollector
         var type = item?["listItem"]?["titleType"]?["id"]?.ToString();
         if (string.IsNullOrEmpty(type))
         {
-            throw new NotImplementedException($"Can't parse item type for chart {listId}. Please open an issue on GitHub and provide the chart ID.");
+            throw new NotSupportedException($"Can't parse item type for chart {listId}. Please open an issue on GitHub and provide the chart ID.");
         }
         return type switch
         {
             "movie" => nameof(Movie),
             "tvSeries" => nameof(Series),
             "tvMiniSeries" => nameof(Series),
-            _ => throw new NotImplementedException($"Unknown item type '{type}' for chart {listId}. Please open an issue on GitHub and provide the chart ID."),
+            _ => throw new NotSupportedException($"Unknown item type '{type}' for chart {listId}. Please open an issue on GitHub and provide the chart ID."),
         };
     }
 }

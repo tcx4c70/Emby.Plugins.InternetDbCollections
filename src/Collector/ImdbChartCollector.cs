@@ -81,7 +81,7 @@ class ImdbChartCollector(string chartId, ILogger logger) : ICollector
     {
         return item?["node"]?["id"]?.ToString() ??
             item?["node"]?["release"]?["titles"]?.AsArray()?.FirstOrDefault()?["id"]?.ToString() ??
-            throw new NotImplementedException($"Can't parse IMDb ID for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
+            throw new NotSupportedException($"Can't parse IMDb ID for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
     }
 
     private string GetItemType(JsonNode item)
@@ -89,14 +89,14 @@ class ImdbChartCollector(string chartId, ILogger logger) : ICollector
         var type = item?["node"]?["titleType"]?["id"]?.ToString();
         if (string.IsNullOrEmpty(type))
         {
-            throw new NotImplementedException($"Can't parse item type for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
+            throw new NotSupportedException($"Can't parse item type for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
         }
         return type switch
         {
             "movie" => nameof(Movie),
             "tvSeries" => nameof(Series),
             "tvMiniSeries" => nameof(Series),
-            _ => throw new NotImplementedException($"Unknown item type '{type}' for chart {chartId}. Please open an issue on GitHub and provide the chart ID."),
+            _ => throw new NotSupportedException($"Unknown item type '{type}' for chart {chartId}. Please open an issue on GitHub and provide the chart ID."),
         };
     }
 }

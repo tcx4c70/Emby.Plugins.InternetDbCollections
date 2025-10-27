@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
@@ -14,9 +15,18 @@ namespace Emby.Plugins.InternetDbCollections.Collector;
 class LetterboxdCollector(string listId, ILogger logger) : ICollector
 {
     private static readonly string s_baseUrl = "https://letterboxd.com";
+    private static readonly string s_imdbBeginTag = "www.imdb.com/title/";
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
+        using var httpClient = new HttpClient()
+        {
+            BaseAddress = new Uri(s_baseUrl),
+            DefaultRequestHeaders =
+            {
+                { "User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:x.x.x) Gecko/20041107 Firefox/x.x" },
+            },
+        };
         var web = new HtmlWeb();
         var page = 1;
         string? name = null;
@@ -29,7 +39,7 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
         {
             var url = $"{s_baseUrl}/{listId}/page/{page}/";
             logger.Debug("Fetching Letterboxd list '{0}' page {1} data from {2}", listId, page, url);
-            var listPage = await web.LoadFromWebAsync($"{s_baseUrl}/{listId}/page/{page}/", 10, cancellationToken);
+            var listPage = await web.LoadFromWebAsync($"{s_baseUrl}/{listId}/page/{page}/", 20, cancellationToken);
             logger.Debug("Received Letterboxd list '{0}' page {1} data, parsing...", listId, page);
 
             name ??= ParseName(listPage);
@@ -55,11 +65,19 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
                 .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-item-slug"].Value)
                 .Select(async slug =>
                 {
-                    var scraper = new HtmlWeb();
-                    var movieDetail = await scraper.LoadFromWebAsync($"{s_baseUrl}/film/{slug}/", 10, cancellationToken);
-                    var imdbLink = movieDetail.DocumentNode.SelectSingleNode("//a[string()='IMDb']");
-                    var imdbId = imdbLink.Attributes["href"].Value.Split('/')[4];
-                    return imdbId;
+                    // We only need to parse IMDb ID from the detail page. HtmlAgilityPack will provide a more robust implementation.
+                    // However, it's very memory-consuming, ~2G for a list with 800 items. So we use HttpClient directly here, which
+                    // will reduce the memory usage to tens of MBs.
+                    var detail = await httpClient.GetStringAsync($"/film/{slug}/", 20, cancellationToken: cancellationToken);
+                    var begin = detail.IndexOf(s_imdbBeginTag);
+                    var end = detail.IndexOf('/', begin + s_imdbBeginTag.Length);
+                    if (begin < 0 || end < 0)
+                    {
+                        throw new NotSupportedException($"Could not find IMDb ID for Letterboxd film '{slug}'. Please open an issue on GitHub and provide the slug {slug}");
+                    }
+
+                    begin += s_imdbBeginTag.Length;
+                    return detail[begin..end];
                 }));
 
             logger.Info("Parsed Letterboxd list '{0}' page {1}", listId, page);

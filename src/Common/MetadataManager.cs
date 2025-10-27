@@ -280,9 +280,10 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
         CancellationToken cancellationToken = default)
     {
         var itemTypes = itemList.Items.Select(item => item.Type).Distinct().ToArray();
-        var providerIds = itemList.Items.SelectMany(item => item.Ids);
         var queryTasks =
-            providerIds.Chunk(100)
+            itemList.Items
+            .Chunk(100)
+            .Select(batch => batch.SelectMany(item => item.Ids).ToList())
             .Select(batch =>
                 Task.Run(() =>
                 {

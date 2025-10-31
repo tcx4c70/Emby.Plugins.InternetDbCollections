@@ -4,7 +4,16 @@
   <Target Name="ILRepacker" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
       <InputAssemblies Include="$(OutputPath)$(TargetName)$(TargetExt)" />
-      <InputAssemblies Include="$(OutputPath)*.dll" Exclude="$(OutputPath)Emby.*.dll;$(OutputPath)MediaBrowser.*.dll" />
+      <InputAssemblies Include="$(OutputPath)Cronos.dll" />
+      <InputAssemblies Include="$(OutputPath)HtmlAgilityPack.dll" />
+      <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.Http.Resilience.dll" />
+      <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.Resilience.dll" />
+      <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.Http.Diagnostics.dll" />
+      <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.Telemetry.Abstractions.dll" />
+      <InputAssemblies Include="$(OutputPath)Microsoft.Extensions.Telemetry.dll" />
+      <InputAssemblies Include="$(OutputPath)Polly.Core.dll" />
+      <InputAssemblies Include="$(OutputPath)Polly.Extensions.dll" />
+      <InputAssemblies Include="$(OutputPath)Polly.RateLimiting.dll" />
     </ItemGroup>
 
     <ILRepack

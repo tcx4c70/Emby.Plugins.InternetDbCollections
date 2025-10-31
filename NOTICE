@@ -11,3 +11,23 @@ dependencies via ILRepack:
 2. HtmlAgilityPack 1.12.4
    License: MIT License
    Project URL: https://html-agility-pack.net/
+
+3. Microsoft.Extensions.Http.Resilience
+   License: MIT License
+   Project URL: https://github.com/dotnet/extensions
+
+4. Microsoft.Extensions.Resilience
+   License: MIT License
+   Project URL: https://github.com/dotnet/extensions
+
+5. Microsoft.Extensions.Http.Diagnostics
+   License: MIT License
+   Project URL: https://github.com/dotnet/extensions
+
+6. Microsoft.Extensions.Telemetry.Abstractions
+   License: MIT License
+   Project URL: https://github.com/dotnet/extensions
+
+7. Polly
+   License: BSD-3-Clause License
+   Project URL: https://github.com/App-vNext/Polly

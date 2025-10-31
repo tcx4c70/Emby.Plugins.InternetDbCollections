@@ -15,15 +15,12 @@ namespace Emby.Plugins.InternetDbCollections.Collector;
 
 public class MdbListCollector(string listId, string apikey, ILogger logger) : ICollector
 {
-    private readonly HttpClient _httpClient = new()
-    {
-        BaseAddress = new Uri("https://api.mdblist.com"),
-    };
+    private readonly HttpClient _httpClient = HttpClientPool.Instance.GetClient("mdblist", client => client.BaseAddress = new Uri("https://api.mdblist.com"));
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
         logger.Debug("Fetching MDB list '{0}' data...", listId);
-        var listResponse = await _httpClient.GetStringAsync($"/lists/{listId}?apikey={apikey}", 10, cancellationToken: cancellationToken);
+        var listResponse = await _httpClient.GetStringAsync($"/lists/{listId}?apikey={apikey}", cancellationToken: cancellationToken);
         logger.Debug("Received MDB list '{0}' data, parsing...", listId);
         var list = JsonSerializer.Deserialize<List<MdbList>>(listResponse)?.FirstOrDefault();
         if (list is null)
@@ -74,7 +71,7 @@ public class MdbListCollector(string listId, string apikey, ILogger logger) : IC
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var response = await _httpClient.GetAsync($"/lists/{listId}/items?offset={offset}&limit={limit}&apikey={apikey}", 10, cancellationToken: cancellationToken);
+            var response = await _httpClient.GetAsync($"/lists/{listId}/items?offset={offset}&limit={limit}&apikey={apikey}", cancellationToken: cancellationToken);
             response.EnsureSuccessStatusCode();
             var stream = response.Content.ReadAsStream(cancellationToken);
             var batchItems = await JsonSerializer.DeserializeAsync<MdbListListItemsResponse>(stream, cancellationToken: cancellationToken) ?? throw new InvalidOperationException("Failed to deserialize response.");

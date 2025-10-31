@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,18 +13,15 @@ namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class ImdbListCollector(string listId, ILogger logger) : ICollector
 {
-    private static readonly string s_imdbListUrlTemplate = "https://www.imdb.com/list/{0}/";
     private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
     private static readonly string s_jsonDataEndTag = "</script>";
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+        var client = HttpClientPool.Instance.GetClient("imdb", client => client.BaseAddress = new Uri("https://www.imdb.com"));
 
-        var url = string.Format(s_imdbListUrlTemplate, listId);
-        logger.Debug("Fetching IMDb list '{0}' data from {1}", listId, url);
-        var response = await client.GetStringAsync(url, 10, cancellationToken: cancellationToken);
+        logger.Debug("Fetching IMDb list '{0}' data", listId);
+        var response = await client.GetStringAsync($"/list/{listId}/", cancellationToken: cancellationToken);
         logger.Debug("Received IMDb list '{0}' data, parsing...", listId);
 
         var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;

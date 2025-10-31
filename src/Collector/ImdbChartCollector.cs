@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,6 @@ namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class ImdbChartCollector(string chartId, ILogger logger) : ICollector
 {
-    private static readonly string s_imdbChartUrlTemplate = "https://www.imdb.com/chart/{0}/";
     private static readonly string s_titleBeginTag = "<title>";
     private static readonly string s_titleEndTag = "</title>";
     private static readonly string s_descriptionBeginTag = "<meta name=\"description\" content=\"";
@@ -27,12 +25,10 @@ class ImdbChartCollector(string chartId, ILogger logger) : ICollector
         // TODO:
         // 1. retry
         // 2. proxy
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+        var client = HttpClientPool.Instance.GetClient("imdb", client => client.BaseAddress = new Uri("https://www.imdb.com"));
 
-        var url = string.Format(s_imdbChartUrlTemplate, chartId);
-        logger.Debug("Fetching IMDb chart '{0}' data from {1}", chartId, url);
-        var response = await client.GetStringAsync(url, 10, logger, cancellationToken: cancellationToken);
+        logger.Debug("Fetching IMDb chart '{0}' data", chartId);
+        var response = await client.GetStringAsync($"/chart/{chartId}/", cancellationToken: cancellationToken);
         logger.Debug("Received IMDb chart '{0}' data, parsing...", chartId);
 
         // Hope we can use third-party libraries to parse HTML in Emby plugin one day.

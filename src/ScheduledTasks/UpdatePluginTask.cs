@@ -55,7 +55,7 @@ class UpdatePluginTask(
             }).ConfigureAwait(false);
             var apiResult = await JsonSerializer.DeserializeAsync<ApiResponseInfo>(response, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version!;
+            var currentVersion = GetCurrentVersion();
             var remoteVersion = ParseVersion(apiResult?.TagName);
             if (currentVersion.CompareTo(remoteVersion) < 0)
             {
@@ -93,6 +93,10 @@ class UpdatePluginTask(
                 });
                 applicationHost.NotifyPendingRestart();
             }
+            else
+            {
+                _logger.Info("Plugin is up to date (version {0})", currentVersion);
+            }
         }
         catch (Exception ex)
         {
@@ -116,6 +120,23 @@ class UpdatePluginTask(
             Type = TaskTriggerInfo.TriggerDaily,
             TimeOfDayTicks = TimeSpan.FromHours(2).Ticks,
         };
+    }
+
+    private Version GetCurrentVersion()
+    {
+        var dllPath = Path.Combine(applicationPaths.PluginsPath, PluginAssemblyName);
+        if (File.Exists(dllPath))
+        {
+            try
+            {
+                return AssemblyName.GetAssemblyName(dllPath).Version!;
+            }
+            catch (Exception ex)
+            {
+                _logger.Warn("Failed to read assembly version from {0}, falling back to executing assembly version: {1}", dllPath, ex.Message);
+            }
+        }
+        return Assembly.GetExecutingAssembly().GetName().Version!;
     }
 
     private static Version ParseVersion(string? v)

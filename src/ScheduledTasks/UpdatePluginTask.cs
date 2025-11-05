@@ -59,7 +59,7 @@ class UpdatePluginTask(
             var remoteVersion = ParseVersion(apiResult?.TagName);
             if (currentVersion.CompareTo(remoteVersion) < 0)
             {
-                _logger.Info("Updating plugin from version {CurrentVersion} to {RemoteVersion}", currentVersion, remoteVersion);
+                _logger.Info("Updating plugin from version {0} to {1}", currentVersion, remoteVersion);
 
                 var url = apiResult?.Assets
                     ?.FirstOrDefault(asset => asset.Name == PluginAssemblyName)

@@ -170,6 +170,9 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                     <div class="flex align-items-center">\
                         <div class="flex-grow">\
                             <input is="emby-input" id="collectorName" name="collectorName" label="Name:" autocomplete="off" ' + (collectorName !== '' ? 'value="' + collectorName + '"' : '') + '/>\
+                            <div class="fieldDescription">\
+                                Override the name scraped from the internet.\
+                            </div>\
                         </div>\
                     </div>\
                 </div>';

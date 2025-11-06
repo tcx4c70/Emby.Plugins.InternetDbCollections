@@ -239,6 +239,28 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             var enableTags = dlg.querySelector('#collectorEnableTags').checked;
             var enableCollections = dlg.querySelector('#collectorEnableCollections').checked;
 
+            var existing = instance.config.Collectors.some(function (collector, index) {
+                if (collector.Type === type && collector.Id.trim().toLowerCase() === id.trim().toLowerCase()) {
+                    if (newEntry || index !== collectorIndex) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+            if (existing) {
+                loading.hide();
+                dialogHelper.close(dlg);
+                require(['confirm'], function (confirm) {
+                    confirm({
+                        title: 'Duplicate Collector',
+                        text: 'A collector with the same type and ID already exists. Please edit the existing collector.',
+                        confirmText: 'OK',
+                        primary: 'cancel'
+                    });
+                });
+                return;
+            }
+
             if (newEntry) {
                 var collector = {};
                 collector.Type = type;
@@ -277,7 +299,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
     View.prototype.editCollector = function (link) {
         var instance = this;
-        var collectorIndex = link.getAttribute('data-collector-idex');
+        var collectorIndex = Number(link.getAttribute('data-collector-idex'));
 
         require(['dialogHelper', 'formDialogStyle', 'emby-select', 'emby-input', 'emby-checkbox', 'paper-icon-button-light'], function (dialogHelper) {
             instance.showCollectorEditor(dialogHelper, collectorIndex);

@@ -312,7 +312,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var instance = this;
         var collectorType = link.getAttribute('data-collector-type');
         var collectorId = link.getAttribute('data-collector-id');
-        var collectorIndex = link.getAttribute('data-collector-index');
+        var collectorIndex = Number(link.getAttribute('data-collector-index'));
 
         require(['confirm'], function (confirm) {
             confirm({

@@ -91,8 +91,8 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             html += "<div class='listItemBodyText secondary'>" + collector.Id + "</div>";
             html += '</div>';
 
-            html += '<button type="button" is="paper-icon-button-light" data-collector-idex="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnEditCollector"><i class="md-icon">edit</i></button>';
-            html += '<button type="button" is="paper-icon-button-light" data-collector-idex="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnDeleteCollector"><i class="md-icon">delete</i></button>';
+            html += '<button type="button" is="paper-icon-button-light" data-collector-index="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnEditCollector"><i class="md-icon">edit</i></button>';
+            html += '<button type="button" is="paper-icon-button-light" data-collector-index="' + i + '" data-collector-type="' + collector.Type + '" data-collector-id="' + collector.Id + '" class="btnDeleteCollector"><i class="md-icon">delete</i></button>';
 
             html += '</div>';
         }
@@ -301,7 +301,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
 
     View.prototype.editCollector = function (link) {
         var instance = this;
-        var collectorIndex = Number(link.getAttribute('data-collector-idex'));
+        var collectorIndex = Number(link.getAttribute('data-collector-index'));
 
         require(['dialogHelper', 'formDialogStyle', 'emby-select', 'emby-input', 'emby-checkbox', 'paper-icon-button-light'], function (dialogHelper) {
             instance.showCollectorEditor(dialogHelper, collectorIndex);
@@ -312,7 +312,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var instance = this;
         var collectorType = link.getAttribute('data-collector-type');
         var collectorId = link.getAttribute('data-collector-id');
-        var collectorIndex = link.getAttribute('data-collector-idex');
+        var collectorIndex = link.getAttribute('data-collector-index');
 
         require(['confirm'], function (confirm) {
             confirm({

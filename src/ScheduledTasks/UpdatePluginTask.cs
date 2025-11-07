@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Utils;
+using Markdig;
 using MediaBrowser.Common;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
@@ -82,13 +83,19 @@ class UpdatePluginTask(
                 var dllPath = Path.Combine(applicationPaths.PluginsPath, PluginAssemblyName);
                 await using var fileStream = new FileStream(dllPath, FileMode.Create, FileAccess.Write);
                 await memoryStream.CopyToAsync(fileStream, 81920, cancellationToken).ConfigureAwait(false);
-
                 _logger.Info("Plugin update complete");
+
+                var overview = string.Empty;
+                if (!string.IsNullOrEmpty(apiResult?.Body))
+                {
+                    overview = Markdown.ToHtml(apiResult.Body);
+                }
+
                 activityManager.Create(new ActivityLogEntry
                 {
                     Name = string.Format(localizationManager.GetLocalizedString("XUpdatedOnTo"), Category, remoteVersion, serverApplicationHost.FriendlyName),
                     Type = "PluginUpdateInstalled",
-                    Overview = apiResult?.Body ?? string.Empty,
+                    Overview = overview,
                     Severity = LogSeverity.Info,
                 });
                 applicationHost.NotifyPendingRestart();

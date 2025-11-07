@@ -31,3 +31,7 @@ dependencies via ILRepack:
 7. Polly
    License: BSD-3-Clause License
    Project URL: https://github.com/App-vNext/Polly
+
+8. Markdig
+   License: BSD-2-Clause License
+   Project URL: https://github.com/xoofx/markdig

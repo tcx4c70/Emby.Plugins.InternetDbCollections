@@ -256,9 +256,8 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 require(['confirm'], function (confirm) {
                     confirm({
                         title: 'Duplicate Collector',
-                        text: 'A collector with the same type and ID already exists. Please edit the existing collector.',
-                        confirmText: 'OK',
-                        primary: 'cancel'
+                        text: `A collector with the same type (${type}) and ID (${id}) already exists. Please edit the existing collector.`,
+                        primary: 'OK'
                     });
                 });
                 return;

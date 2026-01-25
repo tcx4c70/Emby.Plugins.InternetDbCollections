@@ -31,7 +31,7 @@ public class TraktListCollector(string listId, string clientId, ILogger logger) 
         logger.Info("Parsed Trakt list '{0}' description: {1}", listId, list.Description);
 
         logger.Debug("Fetching items for Trakt list '{0}'...", listId);
-        var itemsResponse = await _httpClient.GetStreamAsync($"/lists/{listId}/items", cancellationToken: cancellationToken);
+        var itemsResponse = await _httpClient.GetStreamAsync($"/lists/{list.Ids.Trakt}/items", cancellationToken: cancellationToken);
         logger.Debug("Received items for Trakt list '{0}', parsing...", listId);
 
         var items = JsonSerializer.DeserializeAsyncEnumerable<TraktItem>(itemsResponse, cancellationToken: cancellationToken);

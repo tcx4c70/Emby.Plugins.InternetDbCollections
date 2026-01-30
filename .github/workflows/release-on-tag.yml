@@ -1,0 +1,93 @@
+name: Release on Tag
+
+on:
+  push:
+    tags:
+      - '*' # runs for any pushed tag
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build solution and create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore "Emby.Plugins.InternetDbCollections.sln"
+
+      - name: Build (Release)
+        run: dotnet build "Emby.Plugins.InternetDbCollections.sln" --configuration Release --no-restore
+
+      - name: Extract release notes from CHANGELOG.md
+        id: extract
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "Tag: $TAG"
+
+          # Try to extract the section that starts with '## <tag> -' until the next '## '
+          awk "/^## ${TAG} -/ {flag=1; print; next} /^## / && flag {exit} flag {print}" CHANGELOG.md > release_notes.md || true
+
+          # Fallback: match '## <tag>' without requiring the date
+          if [ ! -s release_notes.md ]; then
+            awk "/^## ${TAG}/ {flag=1; print; next} /^## / && flag {exit} flag {print}" CHANGELOG.md > release_notes.md || true
+          fi
+
+          # If still empty, fall back to a short excerpt of the changelog
+          if [ ! -s release_notes.md ]; then
+            echo "No specific section found for $TAG in CHANGELOG.md, using the top of the changelog" >&2
+            head -n 200 CHANGELOG.md > release_notes.md
+          fi
+
+          # Expose notes as a multiline output value
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          cat release_notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          body: ${{ steps.extract.outputs.notes }}
+          draft: false
+          prerelease: false
+
+      - name: Find built DLL
+        id: find_dll
+        run: |
+          # Prefer bin/Release results, but fall back to any matching DLL
+          dll=$(find . -type f -name 'Emby.Plugins.InternetDbCollections.dll' -path '*/bin/Release/*' -print -quit || true)
+          if [ -z "$dll" ]; then
+            dll=$(find . -type f -name 'Emby.Plugins.InternetDbCollections.dll' -print -quit || true)
+          fi
+          if [ -z "$dll" ]; then
+            echo "Error: built DLL not found" >&2
+            exit 1
+          fi
+          echo "dll=$dll" >> $GITHUB_OUTPUT
+          echo "Found DLL: $dll"
+
+      - name: Upload release asset (DLL)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_dll.outputs.dll }}
+          asset_name: Emby.Plugins.InternetDbCollections.dll
+          asset_content_type: application/octet-stream

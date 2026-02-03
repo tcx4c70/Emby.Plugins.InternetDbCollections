@@ -37,11 +37,11 @@ jobs:
           echo "Tag: $TAG"
 
           # Try to extract the section that starts with '## <tag> -' until the next '## '
-          awk "/^## ${TAG} -/ {flag=1; print; next} /^## / && flag {exit} flag {print}" CHANGELOG.md > release_notes.md || true
+          awk "/^## ${TAG} -/ {flag=1; next} /^## / && flag {exit} flag {print}" CHANGELOG.md > release_notes.md || true
 
           # Fallback: match '## <tag>' without requiring the date
           if [ ! -s release_notes.md ]; then
-            awk "/^## ${TAG}/ {flag=1; print; next} /^## / && flag {exit} flag {print}" CHANGELOG.md > release_notes.md || true
+            awk "/^## ${TAG}/ {flag=1; next} /^## / && flag {exit} flag {print}" CHANGELOG.md > release_notes.md || true
           fi
 
           # If still empty, fall back to a short excerpt of the changelog

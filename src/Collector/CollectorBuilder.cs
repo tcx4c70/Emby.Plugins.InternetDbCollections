@@ -11,7 +11,7 @@ class CollectorBuilder
 {
     private PluginConfiguration? _config;
     private ILogManager? _logManager;
-    private string _logPrefix = Plugin.Instance.Name;
+    private string? _logPrefix;
     private bool _enableCron = false;
 
     public PluginConfiguration Config => _config ?? throw new InvalidOperationException("Configuration has not been set");
@@ -67,7 +67,8 @@ class CollectorBuilder
         }
 
         ICollector collector;
-        string logName = $"{_logPrefix}.{collectorConfig.Type.ToProviderName()}.{collectorConfig.Id}";
+        var logPrefix = _logPrefix ?? Plugin.Instance.Name;
+        string logName = $"{logPrefix}.{collectorConfig.Type.ToProviderName()}.{collectorConfig.Id}";
         var logger = LogManager.GetLogger(logName);
         switch (collectorConfig.Type)
         {

@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emby.Plugins.InternetDbCollections", "src\Emby.Plugins.InternetDbCollections.csproj", "{DC9D619F-3BB3-405D-8E65-D478484642DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emby.Plugins.InternetDbCollections.Tests", "tests\Emby.Plugins.InternetDbCollections.Tests.csproj", "{6E0F4D3B-8B26-4A7A-A1B1-DB2E0B3F5A7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -14,9 +16,13 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DC9D619F-3BB3-405D-8E65-D478484642DD}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
+	{DC9D619F-3BB3-405D-8E65-D478484642DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+	{DC9D619F-3BB3-405D-8E65-D478484642DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+	{DC9D619F-3BB3-405D-8E65-D478484642DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	{DC9D619F-3BB3-405D-8E65-D478484642DD}.Release|Any CPU.Build.0 = Release|Any CPU
+	{6E0F4D3B-8B26-4A7A-A1B1-DB2E0B3F5A7E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+	{6E0F4D3B-8B26-4A7A-A1B1-DB2E0B3F5A7E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+	{6E0F4D3B-8B26-4A7A-A1B1-DB2E0B3F5A7E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	{6E0F4D3B-8B26-4A7A-A1B1-DB2E0B3F5A7E}.Release|Any CPU.Build.0 = Release|Any CPU
+EndGlobalSection
 EndGlobal

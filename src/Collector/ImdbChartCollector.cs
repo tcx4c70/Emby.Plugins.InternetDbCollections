@@ -48,9 +48,13 @@ class ImdbChartCollector(string chartId, ILogger logger, HttpClient? httpClient 
         var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;
         var dataEndIdx = response.IndexOf(s_jsonDataEndTag, dataStartIdx);
         var jsonData = response[dataStartIdx..dataEndIdx];
-        var jsonObject = JsonNode.Parse(jsonData);
+        var jsonObject = JsonNode.Parse(jsonData) ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' JSON data.");
         // TODO: better error handling
-        var items = jsonObject["props"]["pageProps"]["pageData"].AsObject().First().Value["edges"].AsArray();
+        var pageData = jsonObject["props"]?["pageProps"]?["pageData"]?.AsObject()
+            ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' page data.");
+        var firstPage = pageData.FirstOrDefault();
+        var items = firstPage.Value?["edges"]?.AsArray()
+            ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' items.");
         var collectionItems = items
             .Select((item, idx) => new CollectionItem
             {
@@ -76,15 +80,23 @@ class ImdbChartCollector(string chartId, ILogger logger, HttpClient? httpClient 
         };
     }
 
-    private string GetImdbId(JsonNode item)
+    private string GetImdbId(JsonNode? item)
     {
+        if (item is null)
+        {
+            throw new InvalidOperationException($"Can't parse IMDb ID for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
+        }
         return item?["node"]?["id"]?.ToString() ??
             item?["node"]?["release"]?["titles"]?.AsArray()?.FirstOrDefault()?["id"]?.ToString() ??
             throw new NotSupportedException($"Can't parse IMDb ID for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
     }
 
-    private string GetItemType(JsonNode item)
+    private string GetItemType(JsonNode? item)
     {
+        if (item is null)
+        {
+            throw new InvalidOperationException($"Can't parse item type for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
+        }
         var type = item?["node"]?["titleType"]?["id"]?.ToString();
         if (string.IsNullOrEmpty(type))
         {

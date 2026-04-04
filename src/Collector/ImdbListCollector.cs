@@ -30,22 +30,25 @@ class ImdbListCollector(string listId, ILogger logger, HttpClient? httpClient = 
         var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;
         var dataEndIdx = response.IndexOf(s_jsonDataEndTag, dataStartIdx);
         var jsonData = response[dataStartIdx..dataEndIdx];
-        var jsonObject = JsonNode.Parse(jsonData);
+        var jsonObject = JsonNode.Parse(jsonData) ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' JSON data.");
 
-        var name = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["name"]["originalText"].ToString();
+        var name = jsonObject["props"]?["pageProps"]?["mainColumnData"]?["list"]?["name"]?["originalText"]?.ToString()
+            ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' name.");
         logger.Info("Parsed IMDb list name: {0}", name);
 
-        var description = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["description"]["originalText"]["plainText"].ToString();
+        var description = jsonObject["props"]?["pageProps"]?["mainColumnData"]?["list"]?["description"]?["originalText"]?["plainText"]?.ToString()
+            ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' description.");
         logger.Info("Parsed IMDb list description: {0}", description);
 
-        var items = jsonObject["props"]["pageProps"]["mainColumnData"]["list"]["titleListItemSearch"]["edges"].AsArray();
+        var items = jsonObject["props"]?["pageProps"]?["mainColumnData"]?["list"]?["titleListItemSearch"]?["edges"]?.AsArray()
+            ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' items.");
         var collectionItems = items
             .Select((item, idx) => new CollectionItem
             {
                 Order = idx + 1,
                 Ids =
                 {
-                    { "imdb", item["listItem"]["id"].ToString() },
+                    { "imdb", item?["listItem"]?["id"]?.ToString() ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' item ID.") },
                 },
                 Type = GetItemType(item),
             })

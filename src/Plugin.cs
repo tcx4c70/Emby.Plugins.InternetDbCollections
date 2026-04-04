@@ -40,7 +40,8 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbIm
     public Stream GetThumbImage()
     {
         var type = GetType();
-        return type.Assembly.GetManifestResourceStream($"{type.Namespace}.Resources.thumb.png")!;
+        return type.Assembly.GetManifestResourceStream($"{type.Namespace}.Resources.thumb.png")
+            ?? throw new InvalidOperationException("Embedded thumb image resource is missing.");
     }
 
     public IEnumerable<PluginPageInfo> GetPages()

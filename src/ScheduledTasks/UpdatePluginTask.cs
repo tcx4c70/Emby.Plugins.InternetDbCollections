@@ -136,14 +136,16 @@ class UpdatePluginTask(
         {
             try
             {
-                return AssemblyName.GetAssemblyName(dllPath).Version!;
+                return AssemblyName.GetAssemblyName(dllPath).Version
+                    ?? throw new InvalidOperationException($"Assembly version is missing for '{dllPath}'.");
             }
             catch (Exception ex)
             {
                 _logger.Warn("Failed to read assembly version from {0}, falling back to executing assembly version: {1}", dllPath, ex.Message);
             }
         }
-        return Assembly.GetExecutingAssembly().GetName().Version!;
+        return Assembly.GetExecutingAssembly().GetName().Version
+            ?? throw new InvalidOperationException("Executing assembly version is missing.");
     }
 
     private static Version ParseVersion(string? v)

@@ -41,8 +41,10 @@ public static class TraktExtensions
         Type = item.Type.ToEmbyItemType(),
         Ids = item.Type switch
         {
-            TraktItemType.Movie => item.Movie!.Ids.ToCollectionItemIds(),
-            TraktItemType.Show => item.Show!.Ids.ToCollectionItemIds(),
+            TraktItemType.Movie when item.Movie is { } movie => movie.Ids.ToCollectionItemIds(),
+            TraktItemType.Show when item.Show is { } show => show.Ids.ToCollectionItemIds(),
+            TraktItemType.Movie => throw new InvalidOperationException("Trakt movie item is missing movie data."),
+            TraktItemType.Show => throw new InvalidOperationException("Trakt show item is missing show data."),
             _ => throw new NotSupportedException($"Trakt item type '{item.Type}' is not supported"),
         }
     };

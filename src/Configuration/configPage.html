@@ -1,4 +1,30 @@
 <div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/InternetDbCollectionsjs" data-title="Internet Database Collections">
+    <style>
+        .collectorListItem {
+            align-items: center;
+        }
+
+        .collectorListItemDragging {
+            opacity: 0.5;
+        }
+
+        .collectorListItemDropBefore {
+            box-shadow: inset 0 2px 0 var(--theme-accent-color, #00a4dc);
+        }
+
+        .collectorListItemDropAfter {
+            box-shadow: inset 0 -2px 0 var(--theme-accent-color, #00a4dc);
+        }
+
+        .btnDragCollector {
+            cursor: grab;
+            margin-right: 0.25em;
+        }
+
+        .btnDragCollector:active {
+            cursor: grabbing;
+        }
+    </style>
     <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
 
         <form class="auto-center">
@@ -12,6 +38,9 @@
                         <i class="md-icon button-icon button-icon-left">add</i>
                         <span>Add</span>
                     </button>
+                </div>
+                <div class="fieldDescription">
+                    Drag the handle on a collector to reorder it.
                 </div>
 
                 <div class="collectorList"></div>

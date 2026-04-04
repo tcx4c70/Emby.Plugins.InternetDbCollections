@@ -23,6 +23,37 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             }
         });
 
+        view.addEventListener('dragstart', function (e) {
+            var btnDragCollector = e.target.closest('.btnDragCollector');
+            if (!btnDragCollector) {
+                return;
+            }
+
+            instance.beginCollectorDrag(e, btnDragCollector);
+        });
+
+        view.addEventListener('dragover', function (e) {
+            var collectorItem = e.target.closest('.collectorListItem');
+            if (!collectorItem) {
+                return;
+            }
+
+            instance.updateCollectorDropTarget(e, collectorItem);
+        });
+
+        view.addEventListener('drop', function (e) {
+            var collectorItem = e.target.closest('.collectorListItem');
+            if (!collectorItem) {
+                return;
+            }
+
+            instance.dropCollector(e, collectorItem);
+        });
+
+        view.addEventListener('dragend', function () {
+            instance.clearCollectorDragState();
+        });
+
         view.querySelector('form').addEventListener('submit', function (e) {
             e.preventDefault();
             loading.show();
@@ -69,6 +100,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
     View.prototype.loadConfig = function (pluginConfig) {
         var instance = this;
 
+        pluginConfig.Collectors = pluginConfig.Collectors || [];
         instance.view.querySelector('.txtMdbListApiKey').value = pluginConfig.MdbListApiKey || '';
         instance.view.querySelector('.txtTraktClientId').value = pluginConfig.TraktClientId || '';
 
@@ -76,14 +108,18 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
     }
 
     View.prototype.loadCollectors = function (pluginConfig) {
+        this.clearCollectorDragState();
+
         var html = "";
+        var collectors = pluginConfig.Collectors || [];
 
-        for (var i = 0, length = pluginConfig.Collectors.length; i < length; i++) {
+        for (var i = 0, length = collectors.length; i < length; i++) {
 
-            var collector = pluginConfig.Collectors[i];
+            var collector = collectors[i];
 
-            html += '<div class="listItem listItem-border">';
+            html += '<div class="listItem listItem-border collectorListItem" data-collector-index="' + i + '">';
 
+            html += '<button type="button" is="paper-icon-button-light" class="btnDragCollector" draggable="true" data-collector-index="' + i + '" title="Drag to reorder" aria-label="Drag to reorder"><i class="md-icon">drag_indicator</i></button>';
             html += '<i class="md-icon listItemIcon">movie_filter</i>';
 
             html += '<div class="listItemBody two-line">';
@@ -98,6 +134,124 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         }
 
         this.view.querySelector('.collectorList').innerHTML = html;
+    };
+
+    View.prototype.beginCollectorDrag = function (event, btnDragCollector) {
+        var collectorIndex = Number(btnDragCollector.getAttribute('data-collector-index'));
+        var collectorItem = btnDragCollector.closest('.collectorListItem');
+
+        if (!collectorItem || !this.config || !this.config.Collectors || this.config.Collectors.length < 2) {
+            return;
+        }
+
+        this.dragState = {
+            sourceIndex: collectorIndex,
+            sourceElement: collectorItem,
+            targetElement: null,
+            targetIndex: null,
+            insertBefore: true
+        };
+
+        collectorItem.classList.add('collectorListItemDragging');
+
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', String(collectorIndex));
+        }
+    };
+
+    View.prototype.updateCollectorDropTarget = function (event, collectorItem) {
+        if (!this.dragState) {
+            return;
+        }
+
+        var targetIndex = Number(collectorItem.getAttribute('data-collector-index'));
+        if (targetIndex === this.dragState.sourceIndex) {
+            this.clearCollectorDropTarget();
+            return;
+        }
+
+        event.preventDefault();
+
+        var rect = collectorItem.getBoundingClientRect();
+        var insertBefore = (event.clientY - rect.top) < (rect.height / 2);
+        this.setCollectorDropTarget(collectorItem, targetIndex, insertBefore);
+    };
+
+    View.prototype.dropCollector = function (event, collectorItem) {
+        if (!this.dragState) {
+            return;
+        }
+
+        event.preventDefault();
+
+        var targetIndex = Number(collectorItem.getAttribute('data-collector-index'));
+        if (targetIndex === this.dragState.sourceIndex) {
+            this.clearCollectorDragState();
+            return;
+        }
+
+        var rect = collectorItem.getBoundingClientRect();
+        var insertBefore = (event.clientY - rect.top) < (rect.height / 2);
+        if (this.reorderCollectors(this.dragState.sourceIndex, targetIndex, insertBefore)) {
+            this.loadCollectors(this.config);
+        } else {
+            this.clearCollectorDragState();
+        }
+    };
+
+    View.prototype.setCollectorDropTarget = function (collectorItem, targetIndex, insertBefore) {
+        this.clearCollectorDropTarget();
+
+        this.dragState.targetElement = collectorItem;
+        this.dragState.targetIndex = targetIndex;
+        this.dragState.insertBefore = insertBefore;
+
+        collectorItem.classList.add(insertBefore ? 'collectorListItemDropBefore' : 'collectorListItemDropAfter');
+    };
+
+    View.prototype.clearCollectorDropTarget = function () {
+        if (!this.dragState || !this.dragState.targetElement) {
+            return;
+        }
+
+        this.dragState.targetElement.classList.remove('collectorListItemDropBefore', 'collectorListItemDropAfter');
+        this.dragState.targetElement = null;
+        this.dragState.targetIndex = null;
+        this.dragState.insertBefore = true;
+    };
+
+    View.prototype.clearCollectorDragState = function () {
+        if (!this.dragState) {
+            return;
+        }
+
+        if (this.dragState.sourceElement) {
+            this.dragState.sourceElement.classList.remove('collectorListItemDragging');
+        }
+
+        this.clearCollectorDropTarget();
+        this.dragState = null;
+    };
+
+    View.prototype.reorderCollectors = function (sourceIndex, targetIndex, insertBefore) {
+        if (!this.config || !this.config.Collectors || sourceIndex === targetIndex) {
+            return false;
+        }
+
+        var collectors = this.config.Collectors;
+        var movedCollector = collectors.splice(sourceIndex, 1)[0];
+        if (!movedCollector) {
+            return false;
+        }
+
+        var insertionIndex = insertBefore ? targetIndex : targetIndex + 1;
+        if (sourceIndex < insertionIndex) {
+            insertionIndex--;
+        }
+
+        collectors.splice(insertionIndex, 0, movedCollector);
+        return true;
     };
 
     View.prototype.showCollectorEditor = function (dialogHelper, collectorIndex) {

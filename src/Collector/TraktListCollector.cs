@@ -11,9 +11,9 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-public class TraktListCollector(string listId, string clientId, ILogger logger) : ICollector
+public class TraktListCollector(string listId, string clientId, ILogger logger, HttpClient? httpClient = null) : ICollector
 {
-    private readonly HttpClient _httpClient = HttpClientPool.Instance.GetClient("trakt", client =>
+    private readonly HttpClient _httpClient = httpClient ?? HttpClientPool.Instance.GetClient("trakt", client =>
     {
         client.BaseAddress = new Uri("https://api.trakt.tv");
         client.DefaultRequestHeaders.Add("trakt-api-version", "2");

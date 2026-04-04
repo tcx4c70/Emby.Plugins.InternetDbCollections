@@ -13,9 +13,12 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-public class MdbListCollector(string listId, string apikey, ILogger logger) : ICollector
+public class MdbListCollector(string listId, string apikey, ILogger logger, HttpClient? httpClient = null) : ICollector
 {
-    private readonly HttpClient _httpClient = HttpClientPool.Instance.GetClient("mdblist", client => client.BaseAddress = new Uri("https://api.mdblist.com"));
+    private readonly HttpClient _httpClient = httpClient ?? HttpClientPool.Instance.GetClient("mdblist", client =>
+    {
+        client.BaseAddress = new Uri("https://api.mdblist.com");
+    });
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-class ImdbChartCollector(string chartId, ILogger logger) : ICollector
+class ImdbChartCollector(string chartId, ILogger logger, HttpClient? httpClient = null) : ICollector
 {
     private static readonly string s_titleBeginTag = "<title>";
     private static readonly string s_titleEndTag = "</title>";
@@ -19,16 +20,18 @@ class ImdbChartCollector(string chartId, ILogger logger) : ICollector
     private static readonly string s_descriptionEndTag = "\" data-id=\"main\"/>";
     private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
     private static readonly string s_jsonDataEndTag = "</script>";
+    private readonly HttpClient _httpClient = httpClient ?? HttpClientPool.Instance.GetClient("imdb", client =>
+    {
+        client.BaseAddress = new Uri("https://www.imdb.com");
+    });
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
         // TODO:
         // 1. retry
         // 2. proxy
-        var client = HttpClientPool.Instance.GetClient("imdb", client => client.BaseAddress = new Uri("https://www.imdb.com"));
-
         logger.Debug("Fetching IMDb chart '{0}' data", chartId);
-        var response = await client.GetStringAsync($"/chart/{chartId}/", cancellationToken: cancellationToken);
+        var response = await _httpClient.GetStringAsync($"/chart/{chartId}/", cancellationToken: cancellationToken);
         logger.Debug("Received IMDb chart '{0}' data, parsing...", chartId);
 
         // Hope we can use third-party libraries to parse HTML in Emby plugin one day.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
@@ -11,14 +12,17 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
-class LetterboxdCollector(string listId, ILogger logger) : ICollector
+class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient = null) : ICollector
 {
     private static readonly string s_baseUrl = "https://letterboxd.com";
     private static readonly string s_imdbBeginTag = "www.imdb.com/title/";
+    private readonly HttpClient _httpClient = httpClient ?? HttpClientPool.Instance.GetClient("letterboxd", client =>
+    {
+        client.BaseAddress = new Uri("https://letterboxd.com");
+    });
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        var httpClient = HttpClientPool.Instance.GetClient("letterboxd", client => client.BaseAddress = new Uri("https://letterboxd.com"));
         var page = 1;
         string? name = null;
         string? description = null;
@@ -30,7 +34,7 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
         {
             var url = $"{s_baseUrl}/{listId}/page/{page}/";
             logger.Debug("Fetching Letterboxd list '{0}' page {1} data from {2}", listId, page, url);
-            var htmlContent = await httpClient.GetStringAsync($"/{listId}/page/{page}/", cancellationToken: cancellationToken);
+            var htmlContent = await _httpClient.GetStringAsync($"/{listId}/page/{page}/", cancellationToken: cancellationToken);
             var listPage = new HtmlDocument();
             listPage.LoadHtml(htmlContent);
             logger.Debug("Received Letterboxd list '{0}' page {1} data, parsing...", listId, page);
@@ -61,7 +65,7 @@ class LetterboxdCollector(string listId, ILogger logger) : ICollector
                     // We only need to parse IMDb ID from the detail page. HtmlAgilityPack will provide a more robust implementation.
                     // However, it's very memory-consuming, ~2G for a list with 800 items. So we use HttpClient directly here, which
                     // will reduce the memory usage to tens of MBs.
-                    var detail = await httpClient.GetStringAsync($"/film/{slug}/", cancellationToken: cancellationToken);
+                    var detail = await _httpClient.GetStringAsync($"/film/{slug}/", cancellationToken: cancellationToken);
                     var begin = detail.IndexOf(s_imdbBeginTag);
                     var end = detail.IndexOf('/', begin + s_imdbBeginTag.Length);
                     if (begin < 0 || end < 0)

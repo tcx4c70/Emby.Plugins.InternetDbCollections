@@ -5,6 +5,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         BaseView.apply(this, arguments);
 
         var instance = this;
+        instance.virtualFolders = null;
 
         view.addEventListener('click', function (e) {
             var btnDeleteCollector = e.target.closest('.btnDeleteCollector');
@@ -59,6 +60,7 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
             loading.show();
             var mdbListApiKey = view.querySelector('.txtMdbListApiKey').value.trim();
             var traktClientId = view.querySelector('.txtTraktClientId').value.trim();
+            var libraryIds = instance.getSelectedLibraryIds();
             if (instance.config.Collectors.some(collector => collector.Type === 'MDB List') && mdbListApiKey === '') {
                 loading.hide();
                 require(['confirm'], function (confirm) {
@@ -83,9 +85,22 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
                 });
                 return false;
             }
+            if (!libraryIds.length) {
+                loading.hide();
+                require(['confirm'], function (confirm) {
+                    confirm({
+                        title: 'Library Selection Required',
+                        text: 'Select at least one movie or TV library before saving this configuration.',
+                        confirmText: 'OK',
+                        primary: 'cancel'
+                    });
+                });
+                return false;
+            }
 
             instance.config.MdbListApiKey = mdbListApiKey;
             instance.config.TraktClientId = traktClientId;
+            instance.config.LibraryIds = libraryIds;
             ApiClient.updatePluginConfiguration(instance.pluginId, instance.config).then(Dashboard.processServerConfigurationUpdateResult);
             return false;
         });
@@ -101,11 +116,46 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         var instance = this;
 
         pluginConfig.Collectors = pluginConfig.Collectors || [];
+        pluginConfig.LibraryIds = pluginConfig.LibraryIds || [];
         instance.view.querySelector('.txtMdbListApiKey').value = pluginConfig.MdbListApiKey || '';
         instance.view.querySelector('.txtTraktClientId').value = pluginConfig.TraktClientId || '';
 
+        instance.loadLibraries(pluginConfig);
         instance.loadCollectors(pluginConfig);
     }
+
+    View.prototype.loadLibraries = function (pluginConfig) {
+        var html = ""
+        var libraries = this.virtualFolders || [];
+        var selectedLibraries = new Set(pluginConfig.LibraryIds || []);
+
+        for (var i = 0, length = libraries.length; i < length; ++i) {
+            var library = libraries[i];
+            var selected = selectedLibraries.has(Number(library.Id));
+
+            html += '<div class="checkboxContainer checkboxContainer-withDescription">\
+                        <label>\
+                            <input type="checkbox" is="emby-checkbox" id="library-' + library.Id + '" ' + (selected ? 'checked' : '') + '/>\
+                            <span>' + library.Name + '</span>\
+                        </label>\
+                     </div>';
+        }
+
+        this.view.querySelector('.libraryList').innerHTML = html;
+    };
+
+    View.prototype.getSelectedLibraryIds = function () {
+        var libraries = this.virtualFolders || [];
+        var selectedLibraries = []
+        for (var i = 0, length = libraries.length; i < length; ++i) {
+            var library = libraries[i];
+            var selected = this.view.querySelector('#library-' + library.Id).checked;
+            if (selected) {
+                selectedLibraries.push(Number(library.Id));
+            }
+        }
+        return selectedLibraries;
+    };
 
     View.prototype.loadCollectors = function (pluginConfig) {
         this.clearCollectorDragState();
@@ -489,10 +539,20 @@ define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-checkbox', 'em
         loading.show();
 
         var instance = this;
+        instance.virtualFolders = null;
         ApiClient.getPluginConfiguration(instance.pluginId).then(function (pluginConfig) {
             instance.config = pluginConfig;
-            instance.loadConfig(instance.config);
-            loading.hide();
+            ApiClient.getVirtualFolders().then(function (result) {
+                var virtualFolders = result.Items;
+                console.log(`virtualFolders: ${virtualFolders}`);
+                instance.virtualFolders = virtualFolders.filter(function (folder) {
+                    var collectionType = folder.CollectionType;
+                    return collectionType === 'movies' || collectionType === 'tvshows';
+                });
+                console.log(`movies/tvshows virtualFolders: ${instance.virtualFolders}`);
+                instance.loadConfig(instance.config);
+                loading.hide();
+            })
         });
     };
 

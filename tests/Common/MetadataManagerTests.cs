@@ -22,6 +22,7 @@ public class MetadataManagerTests
         var queries = new List<InternalItemsQuery>();
         var updatedBatches = new List<List<BaseItem>>();
         var libraryManager = new Mock<ILibraryManager>(MockBehavior.Strict);
+        long[] libraryIds = [11L, 22L];
 
         var itemList = CreateItemList(
             "IMDb Top 250",
@@ -55,7 +56,7 @@ public class MetadataManagerTests
 
         SetupUpdateItems(libraryManager, updatedBatches);
 
-        var manager = new MetadataManager(logger, libraryManager.Object);
+        var manager = new MetadataManager(logger, libraryManager.Object, libraryIds);
 
         await manager.UpdateMetadataAsync(itemList, new RecordingProgress<double>());
 
@@ -73,9 +74,11 @@ public class MetadataManagerTests
         Assert.Equal([nameof(Movie), nameof(Series)], queries[0].IncludeItemTypes);
         Assert.Equal([itemList.Name], queries[0].Tags);
         Assert.Empty(queries[0].ExcludeTags);
+        Assert.True(queries[0].ParentIds == null || queries[0].ParentIds.Length == 0);
         Assert.Equal([nameof(Movie), nameof(Series)], queries[1].IncludeItemTypes);
         Assert.Equal([itemList.Name], queries[1].ExcludeTags);
         Assert.Equal(2, queries[1].AnyProviderIdEquals!.Count);
+        Assert.Equal(libraryIds, queries[1].ParentIds);
     }
 
     [Fact]
@@ -86,6 +89,7 @@ public class MetadataManagerTests
         var updatedBatches = new List<List<BaseItem>>();
         BoxSet? updatedCollection = null;
         var libraryManager = new Mock<ILibraryManager>(MockBehavior.Strict);
+        long[] libraryIds = [11L, 22L];
 
         var itemList = CreateItemList(
             "IMDb Top 250",
@@ -132,7 +136,7 @@ public class MetadataManagerTests
         libraryManager.Setup(m => m.UpdateItem(It.IsAny<BaseItem>(), It.IsAny<BaseItem>(), ItemUpdateType.MetadataEdit))
             .Callback<BaseItem, BaseItem, ItemUpdateType>((item, _, _) => updatedCollection = (BoxSet)item);
 
-        var manager = new MetadataManager(logger, libraryManager.Object);
+        var manager = new MetadataManager(logger, libraryManager.Object, libraryIds);
 
         await manager.UpdateMetadataAsync(itemList, new RecordingProgress<double>());
 
@@ -150,6 +154,11 @@ public class MetadataManagerTests
         Assert.Equal(3, queries.Count(query => query.IncludeItemTypes?.Contains(nameof(BoxSet)) == true));
         Assert.Equal(2, queries.Count(query => query.CollectionIds?.Any() == true));
         Assert.Equal(1, queries.Count(query => query.AnyProviderIdEquals?.Any() == true));
+        Assert.All(queries.Take(2), query => Assert.True(query.ParentIds == null || query.ParentIds.Length == 0));
+        Assert.Equal(libraryIds, queries.Single(query => query.AnyProviderIdEquals?.Any() == true).ParentIds);
+        Assert.All(
+            queries.Where(query => query.AnyProviderIdEquals?.Any() != true),
+            query => Assert.True(query.ParentIds == null || query.ParentIds.Length == 0));
     }
 
     [Fact]
@@ -159,6 +168,7 @@ public class MetadataManagerTests
         var queries = new List<InternalItemsQuery>();
         var updatedBatches = new List<List<BaseItem>>();
         var libraryManager = new Mock<ILibraryManager>(MockBehavior.Strict);
+        long[] libraryIds = [11L, 22L];
 
         var itemList = CreateItemList(
             "Cleanup list",
@@ -198,7 +208,7 @@ public class MetadataManagerTests
 
         SetupUpdateItems(libraryManager, updatedBatches);
 
-        var manager = new MetadataManager(logger, libraryManager.Object);
+        var manager = new MetadataManager(logger, libraryManager.Object, libraryIds);
 
         await manager.CleanupMetadataAsync(itemList, new RecordingProgress<double>());
 
@@ -214,6 +224,7 @@ public class MetadataManagerTests
         Assert.Equal(1, queries.Count(query => query.Tags?.Any() == true));
         Assert.Equal(1, queries.Count(query => query.IncludeItemTypes?.Contains(nameof(BoxSet)) == true));
         Assert.Equal(1, queries.Count(query => query.CollectionIds?.Any() == true));
+        Assert.All(queries, query => Assert.True(query.ParentIds == null || query.ParentIds.Length == 0));
     }
 
     [Fact]
@@ -221,7 +232,7 @@ public class MetadataManagerTests
     {
         var logger = Mock.Of<ILogger>();
         var libraryManager = new Mock<ILibraryManager>(MockBehavior.Strict);
-        var manager = new MetadataManager(logger, libraryManager.Object);
+        var manager = new MetadataManager(logger, libraryManager.Object, []);
         var itemList = CreateItemList("Disabled list", enableTags: false, enableCollections: false);
         var progress = new RecordingProgress<double>();
 
@@ -239,6 +250,7 @@ public class MetadataManagerTests
         var queries = new List<InternalItemsQuery>();
         var updatedBatches = new List<List<BaseItem>>();
         var libraryManager = new Mock<ILibraryManager>(MockBehavior.Strict);
+        long[] libraryIds = [11L, 22L];
 
         var itemList = CreateItemList(
             "Ambiguous list",
@@ -268,7 +280,7 @@ public class MetadataManagerTests
 
         SetupUpdateItems(libraryManager, updatedBatches);
 
-        var manager = new MetadataManager(logger, libraryManager.Object);
+        var manager = new MetadataManager(logger, libraryManager.Object, libraryIds);
 
         await manager.CleanupMetadataAsync(itemList, new RecordingProgress<double>());
 
@@ -278,6 +290,7 @@ public class MetadataManagerTests
         Assert.Equal(1, queries.Count(query => query.Tags?.Any() == true));
         Assert.Equal(1, queries.Count(query => query.IncludeItemTypes?.Contains(nameof(BoxSet)) == true));
         Assert.DoesNotContain(queries, query => query.CollectionIds?.Any() == true);
+        Assert.All(queries, query => Assert.True(query.ParentIds == null || query.ParentIds.Length == 0));
     }
 
     [Fact]
@@ -287,6 +300,7 @@ public class MetadataManagerTests
         var queries = new List<InternalItemsQuery>();
         var updatedBatches = new List<List<BaseItem>>();
         var libraryManager = new Mock<ILibraryManager>(MockBehavior.Strict);
+        long[] libraryIds = [11L, 22L];
 
         var itemListItems = Enumerable.Range(1, 101)
             .Select(index => CreateCollectionItem(index, nameof(Movie), $"tt{index:07}"))
@@ -317,7 +331,7 @@ public class MetadataManagerTests
 
         SetupUpdateItems(libraryManager, updatedBatches);
 
-        var manager = new MetadataManager(logger, libraryManager.Object);
+        var manager = new MetadataManager(logger, libraryManager.Object, libraryIds);
 
         await manager.UpdateMetadataAsync(itemList, new RecordingProgress<double>());
 
@@ -328,6 +342,8 @@ public class MetadataManagerTests
         Assert.Equal(2, queries.Count(query => query.AnyProviderIdEquals?.Any() == true));
         Assert.Contains(queries.Where(query => query.AnyProviderIdEquals?.Any() == true), query => query.AnyProviderIdEquals!.Count == 100);
         Assert.Contains(queries.Where(query => query.AnyProviderIdEquals?.Any() == true), query => query.AnyProviderIdEquals!.Count == 1);
+        Assert.True(queries[0].ParentIds == null || queries[0].ParentIds.Length == 0);
+        Assert.All(queries.Skip(1), query => Assert.Equal(libraryIds, query.ParentIds));
     }
 
     private static void SetupGetItemList(
@@ -436,6 +452,7 @@ public class MetadataManagerTests
             $"Tags=[{string.Join(",", query.Tags ?? [])}], " +
             $"ExcludeTags=[{string.Join(",", query.ExcludeTags ?? [])}], " +
             $"CollectionIds=[{string.Join(",", query.CollectionIds ?? [])}], " +
+            $"ParentIds=[{string.Join(",", query.ParentIds ?? [])}], " +
             $"AnyProviderIdEquals={query.AnyProviderIdEquals?.Count ?? 0}";
     }
 }

@@ -12,7 +12,7 @@ using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Common;
 
-public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
+public class MetadataManager(ILogger logger, ILibraryManager libraryManager, long[] libraryIds)
 {
     public async Task UpdateMetadataAsync(
         CollectionItemList itemList,
@@ -68,8 +68,11 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
                 .ToHashSet();
             items = items
                 .Where(item =>
-                    item.ProviderIds
-                    .All(kvp => !providerIds.Contains((kvp.Key.ToLower(), kvp.Value.ToLower()))))
+                {
+                    var folders = libraryManager.GetCollectionFolders(item);
+                    return !folders.Select(folder => folder.InternalId).Intersect(libraryIds).Any() ||
+                           item.ProviderIds.All(kvp => !providerIds.Contains((kvp.Key.ToLower(), kvp.Value.ToLower())));
+                })
                 .ToList();
         }
         logger.Info("Found {0} items need to remove tag '{1}'", items.Count, itemList.Name);
@@ -181,8 +184,11 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
                 .ToHashSet();
             items = items
                 .Where(item =>
-                    item.ProviderIds
-                    .All(kvp => !providerIds.Contains((kvp.Key.ToLower(), kvp.Value.ToLower()))))
+                {
+                    var folders = libraryManager.GetCollectionFolders(item);
+                    return !folders.Select(folder => folder.InternalId).Intersect(libraryIds).Any() ||
+                           item.ProviderIds.All(kvp => !providerIds.Contains((kvp.Key.ToLower(), kvp.Value.ToLower())));
+                })
                 .ToList();
         }
         logger.Info("Found {0} items need to be removed from the BoxSet '{1}'", items.Count, itemList.Name);
@@ -291,6 +297,7 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager)
                     {
                         IncludeItemTypes = itemTypes,
                         AnyProviderIdEquals = batch,
+                        ParentIds = libraryIds,
                     };
                     if (queryBuilder != null)
                     {

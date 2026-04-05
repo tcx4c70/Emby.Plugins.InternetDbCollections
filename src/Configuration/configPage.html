@@ -39,17 +39,29 @@
                         <span>Add</span>
                     </button>
                 </div>
-                <div class="fieldDescription">
-                    Drag the handle on a collector to reorder it.
-                </div>
 
                 <div class="collectorList"></div>
             </div>
 
             <div class="verticalSection">
-                <h2 class="sectionTitle">
-                    <span>Settings</span>
-                </h2>
+                <div class="sectionTitleContainer">
+                    <h2 class="sectionTitle">
+                        <span>Libraries</span>
+                    </h2>
+                    <div class="fieldDescription">
+                        Select at least one movie or TV library. Searches and updates will only use these libraries.
+                    </div>
+                </div>
+
+                <dev class="libraryList"></dev>
+            </div>
+
+            <div class="verticalSection">
+                <div class="sectionTitleContainer">
+                    <h2 class="sectionTitle">
+                        <span>Settings</span>
+                    </h2>
+                </div>
                 <div class="inputContainer">
                     <input is="emby-input" type="password" class="txtMdbListApiKey" id="txtMdbListApiKey" label="MDB List API Key:" autocomplete="off" />
                     <div class="fieldDescription">

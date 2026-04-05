@@ -52,7 +52,7 @@ class UpdateMetadataTask(ILibraryManager libraryManager, ILogManager logManager)
 
         _logger.Info("Collected {0} item lists from {1} collectors", itemLists.Count, collectors.Count);
 
-        var metadataManager = new MetadataManager(_logger, libraryManager);
+        var metadataManager = new MetadataManager(_logger, libraryManager, Plugin.Instance.Configuration.LibraryIds);
         var step = itemLists.Count == 0 ? 50.0 : 50.0 / itemLists.Count;
         var currentProgress = 50.0;
         foreach (var itemList in itemLists)

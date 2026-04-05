@@ -9,6 +9,8 @@ public class PluginConfiguration : BasePluginConfiguration
 
     public string TraktClientId { get; set; } = string.Empty;
 
+    public long[] LibraryIds { get; set; } = [];
+
     public CollectorConfiguration[] Collectors { get; set; } =
     [
         new CollectorConfiguration

@@ -27,7 +27,6 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
         string? name = null;
         string? description = null;
         var ranks = new List<int>();
-        var letterboxdIds = new List<string>();
         var imdbIdTasks = new List<Task<string>>();
 
         while (true)
@@ -52,10 +51,6 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
             {
                 ranks.AddRange(Enumerable.Range(ranks.Count + 1, posterItems.Count));
             }
-
-            letterboxdIds.AddRange(
-                posterItems
-                .Select(item => item.SelectSingleNode(".//div[@class='react-component']").Attributes["data-film-id"].Value));
 
             imdbIdTasks.AddRange(
                 posterItems
@@ -89,7 +84,7 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
         var imdbIds = await Task.WhenAll(imdbIdTasks);
         var items =
             ranks
-            .Zip(letterboxdIds, imdbIds)
+            .Zip(imdbIds)
             .Select(tuple => new CollectionItem()
             {
                 Order = tuple.First,
@@ -98,8 +93,7 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
                 Type = nameof(Movie),
                 Ids = new Dictionary<string, string>()
                 {
-                    { "letterboxd", tuple.Second },
-                    { "imdb", tuple.Third },
+                    { "imdb", tuple.Second },
                 },
             })
             .ToList();

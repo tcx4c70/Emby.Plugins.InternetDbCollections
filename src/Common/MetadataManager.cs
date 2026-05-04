@@ -298,6 +298,7 @@ public class MetadataManager(ILogger logger, ILibraryManager libraryManager, lon
                         IncludeItemTypes = itemTypes,
                         AnyProviderIdEquals = batch,
                         ParentIds = libraryIds,
+                        Recursive = true,
                     };
                     if (queryBuilder != null)
                     {

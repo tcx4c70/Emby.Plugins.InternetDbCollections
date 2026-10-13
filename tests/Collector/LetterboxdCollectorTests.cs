@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using Emby.Plugins.InternetDbCollections.Collector;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
@@ -44,13 +45,13 @@ public class LetterboxdCollectorTests
         Assert.Equal(3, items.Count);
         Assert.Equal(1, items[0].Order);
         Assert.Equal(nameof(Movie), items[0].Type);
-        Assert.Equal("film-one", items[0].Ids["letterboxd"]);
+        Assert.Single(items[0].Ids);
         Assert.Equal("tt1000001", items[0].Ids["imdb"]);
         Assert.Equal(2, items[1].Order);
-        Assert.Equal("film-two", items[1].Ids["letterboxd"]);
+        Assert.Single(items[1].Ids);
         Assert.Equal("tt1000002", items[1].Ids["imdb"]);
         Assert.Equal(3, items[2].Order);
-        Assert.Equal("film-three", items[2].Ids["letterboxd"]);
+        Assert.Single(items[2].Ids);
         Assert.Equal("tt1000003", items[2].Ids["imdb"]);
         Assert.Contains("/fcbarcelona/list/movies-everyone-should-watch-at-least-once/page/1/", handler.Requests);
         Assert.Contains("/fcbarcelona/list/movies-everyone-should-watch-at-least-once/page/2/", handler.Requests);
@@ -91,12 +92,89 @@ public class LetterboxdCollectorTests
         Assert.Equal("simple\\list", result.Ids[CollectorType.Letterboxd.ToProviderName()]);
         Assert.Equal(2, items.Count);
         Assert.Equal(1, items[0].Order);
-        Assert.Equal("film-a", items[0].Ids["letterboxd"]);
+        Assert.Single(items[0].Ids);
         Assert.Equal("tt2000001", items[0].Ids["imdb"]);
         Assert.Equal(2, items[1].Order);
-        Assert.Equal("film-b", items[1].Ids["letterboxd"]);
+        Assert.Single(items[1].Ids);
         Assert.Equal("tt2000002", items[1].Ids["imdb"]);
         Assert.Equal(["/simple/list/page/1/", "/film/simple-one/", "/film/simple-two/"], handler.Requests);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("<html><body>No external IDs</body></html>")]
+    [InlineData("<html><body><a href=\"https://www.themoviedb.org/movie/126400/\">TMDb</a></body></html>")]
+    [InlineData("www.imdb.com/title/tt1000002")]
+    [InlineData("www.imdb.com/title/")]
+    [InlineData("www.imdb.com/title//")]
+    public async Task CollectAsync_keeps_films_without_imdb_ids(string detailHtml)
+    {
+        Mock<ILogger> logger = new();
+        HttpMessageHandlerStub handler = new(request =>
+        {
+            return request.RequestUri!.AbsolutePath switch
+            {
+                "/fcbarcelona/list/movies-everyone-should-watch-at-least-once/page/1/" =>
+                    HttpResponseMessageFactory.Html(BuildPage1Html()),
+                "/fcbarcelona/list/movies-everyone-should-watch-at-least-once/page/2/" =>
+                    HttpResponseMessageFactory.Html(BuildPage2Html()),
+                "/film/film-one/" => HttpResponseMessageFactory.Html(BuildDetailHtml("tt1000001")),
+                "/film/film-two/" => HttpResponseMessageFactory.Html(detailHtml),
+                "/film/film-three/" => HttpResponseMessageFactory.Html(BuildDetailHtml("tt1000003")),
+                _ => throw new InvalidOperationException($"Unexpected request: {request.RequestUri}"),
+            };
+        });
+
+        using HttpClient client = new(handler)
+        {
+            BaseAddress = new Uri("https://letterboxd.com"),
+        };
+
+        LetterboxdCollector collector = new(
+            "fcbarcelona/list/movies-everyone-should-watch-at-least-once", logger.Object, client);
+
+        CollectionItemList result = await collector.CollectAsync();
+        var items = result.Items.ToList();
+
+        Assert.Equal(3, items.Count);
+        Assert.Equal([1, 2, 3], items.Select(item => item.Order));
+        Assert.All(items, item => Assert.Equal(nameof(Movie), item.Type));
+        Assert.Single(items[0].Ids);
+        Assert.Equal("tt1000001", items[0].Ids["imdb"]);
+        Assert.Empty(items[1].Ids);
+        Assert.Single(items[2].Ids);
+        Assert.Equal("tt1000003", items[2].Ids["imdb"]);
+        logger.Verify(log => log.Warn(
+            "Could not find IMDb ID for Letterboxd film '{0}', keeping the item without provider IDs",
+            It.Is<object[]>(args => args.Length == 1 && object.Equals(args[0], "film-two"))), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.Forbidden)]
+    [InlineData(HttpStatusCode.NotFound)]
+    public async Task CollectAsync_propagates_film_request_failures(HttpStatusCode statusCode)
+    {
+        HttpMessageHandlerStub handler = new(request =>
+        {
+            return request.RequestUri!.AbsolutePath switch
+            {
+                "/simple/list/page/1/" => HttpResponseMessageFactory.Html(BuildShortPageHtml()),
+                "/film/simple-one/" => HttpResponseMessageFactory.Html(BuildDetailHtml("tt2000001")),
+                "/film/simple-two/" => new HttpResponseMessage(statusCode),
+                _ => throw new InvalidOperationException($"Unexpected request: {request.RequestUri}"),
+            };
+        });
+
+        using HttpClient client = new(handler)
+        {
+            BaseAddress = new Uri("https://letterboxd.com"),
+        };
+
+        LetterboxdCollector collector = new("simple/list", Mock.Of<ILogger>(), client);
+
+        HttpRequestException exception = await Assert.ThrowsAsync<HttpRequestException>(() => collector.CollectAsync());
+
+        Assert.Equal(statusCode, exception.StatusCode);
     }
 
     private static string BuildPage1Html()

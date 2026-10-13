@@ -27,7 +27,7 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
         string? name = null;
         string? description = null;
         var ranks = new List<int>();
-        var imdbIdTasks = new List<Task<string>>();
+        var imdbIdTasks = new List<Task<string?>>();
 
         while (true)
         {
@@ -61,15 +61,20 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
                     // However, it's very memory-consuming, ~2G for a list with 800 items. So we use HttpClient directly here, which
                     // will reduce the memory usage to tens of MBs.
                     var detail = await _httpClient.GetStringAsync($"/film/{slug}/", cancellationToken: cancellationToken);
-                    var begin = detail.IndexOf(s_imdbBeginTag);
-                    var end = detail.IndexOf('/', begin + s_imdbBeginTag.Length);
-                    if (begin < 0 || end < 0)
+                    int begin = detail.IndexOf(s_imdbBeginTag, StringComparison.Ordinal);
+                    if (begin >= 0)
                     {
-                        throw new NotSupportedException($"Could not find IMDb ID for Letterboxd film '{slug}'. Please open an issue on GitHub and provide the slug {slug}");
+                        begin += s_imdbBeginTag.Length;
+                        int end = detail.IndexOf('/', begin);
+                        if (end > begin)
+                        {
+                            return detail[begin..end];
+                        }
                     }
 
-                    begin += s_imdbBeginTag.Length;
-                    return detail[begin..end];
+                    logger.Warn(
+                        "Could not find IMDb ID for Letterboxd film '{0}', keeping the item without provider IDs", slug);
+                    return null;
                 }));
 
             logger.Info("Parsed Letterboxd list '{0}' page {1}", listId, page);
@@ -91,10 +96,12 @@ class LetterboxdCollector(string listId, ILogger logger, HttpClient? httpClient 
                 // TODO: Letterboxd supports TV shows too, but all TV shows are with type film. e.g. https://letterboxd.com/slinkyman/list/letterboxds-top-100-highest-rated-documentary/
                 // How can we detect them?
                 Type = nameof(Movie),
-                Ids = new Dictionary<string, string>()
-                {
-                    { "imdb", tuple.Second },
-                },
+                Ids = tuple.Second is { } imdbId
+                    ? new Dictionary<string, string>()
+                    {
+                        { "imdb", imdbId },
+                    }
+                    : new Dictionary<string, string>(),
             })
             .ToList();
 

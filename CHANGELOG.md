@@ -4,6 +4,34 @@ All notable changes to this project are documented in this file. This file was g
 
 ## Unreleased
 
+## v0.9.2.0 - 2026-10-13
+
+### Added
+- feat: Add AGENTS.md (059b565)
+- feat(config): Support drag-and-drop to reorder collectors (a9183d1)
+- feat: Support to library scope limit (e9017f8)
+
+### Changed
+- chore: Add CHANGELOG.md (2dc69d0)
+- ci: add GitHub Actions workflow to create release on tag (build + attach DLL) (850eda6)
+- ci: Switch to softprops/action-gh-release@v2 (e3a2085)
+- ci: Remove tag name and date from release body (a2025ab)
+- test: Add test project (0ce8827)
+- refactor(test): Refactor the test fold structure (ca0fcd9)
+- refactor: Remove unused code (20695e8)
+- tests: Add more testcases for AsyncEnumerable (8bb5dd5)
+- refactor: Inject HttpClient in collectors' ctr (78e91a5)
+- test: Add testcases for collectors (46b2c5e)
+- test: Add testcases for MetadataManager (672b3d4)
+- Update version to 0.9.2.0 (412d179)
+
+### Fixed
+- fix(Trakt): Use trakt id instead of name to avoid 400 bad request (7c3800f)
+- fix: Fix all possible null reference (a8e92f5)
+- fix(MetadataManager): Can't find any media items (60eb15f)
+- fix(Collector/Letterboxd): Remove Letterboxd ID (8dc9ec4)
+- fix(Collector/Letterboxd): Keep films without IMDb IDs (ec4a71f)
+
 ## v0.9.1.0 - 2025-12-17
 
 ### Changed

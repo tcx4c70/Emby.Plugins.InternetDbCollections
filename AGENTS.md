@@ -24,7 +24,50 @@
 - Prefer pure unit tests for collectors, mappings, progress helpers, and configuration logic; avoid live network calls.
 
 ## Commit & Pull Request Guidelines
-- Commit messages follow Conventional Commit style used in history: `test:`, `fix(scope):`, `ci:`, `refactor(test):`.
+- **Commits**: follow the **Angular convention** (`feat`, `fix`, `chore`,
+  `build`, `ci`, `docs`, `refactor`, `test`, ..., with optional scope like
+  `feat(Collector/Letterboxd):`).
+  - **Write commit titles and messages in English.**
+  - **Follow the readable, multi-line format of the existing Git history.**
+    Keep the Angular subject on one line, followed by a blank line. Explain the
+    problem or motivation and the chosen approach in separate, short paragraphs;
+    include relevant tradeoffs instead of only listing changed files.
+  - **Hard-wrap the body at roughly 72 columns (at most 80)**, except for
+    indivisible URLs, identifiers and trailers. Do not rely on terminal soft
+    wrapping or put the whole body on one long physical line.
+  - For substantial changes, follow the rationale with a concise bullet list of
+    the affected behavior/surfaces and relevant regression coverage. Indent
+    wrapped bullet continuations by two spaces. Separate paragraphs and the
+    final trailer block with blank lines; keep trailers contiguous.
+  - Use `git commit -F <message-file>` or a genuinely multi-line `-m` argument
+    to preserve line breaks. Before finishing, inspect `git log -1 --format=%B`
+    and check the actual stored message, not just how the shell command looks.
+- **Committing is allowed by default** (unless the user explicitly says not to),
+  but **split commits by _functionality_, as vertical feature slices - NOT by
+  layer/module.**
+  - **One commit = one end-to-end user-facing capability.** If a feature needs
+    backend + frontend + migration + tests, they go in the **same** commit. Do
+    **not** make a "backend changes" commit and a separate "frontend changes"
+    commit for the same feature.
+  - **Never** finish a large piece of work with one giant catch-all commit
+    (e.g. thousands of lines). Build and commit incrementally, one capability
+    at a time, each commit independently building and passing the lint/format
+    gate.
+- **Plans (`plan.md`)** must also be organized as **vertical feature slices**,
+  not as a "backend tasks" / "frontend tasks" split.
+- **`Fixes:` trailer (suggested, not required)**: for a `fix` commit, when you
+  can identify the commit that introduced the bug, add a Linux-kernel-style
+  trailer as the last line(s), with no blank line between it and any other
+  trailers (e.g. `Co-authored-by:`):
+  ```text
+  Fixes: <12-char-commit-id> ("<commit-title>")
+  ```
+  Find the offending commit with e.g.
+  `git log -S "<buggy snippet>" -- <file>` or `git blame`. Omit the trailer when
+  the introducing commit can't be found or is hard to pin down - it's a
+  convenience, not a hard rule.
+- **NEVER `git push` without the user's explicit permission.**
+- **NEVER commit `plan.md`** - it is gitignored and must stay untracked.
 - PRs should explain behavior changes, list commands run, and mention any config or compatibility impact.
 - Add screenshots only for UI/config page changes.
 

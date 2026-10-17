@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file. This file was g
 
 ## Unreleased
 
+## v0.9.3.0 - 2026-10-17
+
+### Changed
+- Update Changelog for 0.9.2.0 (6ea9e33)
+- Limit IMDb charts to the five supported chart IDs and document public-list requirements (cc74751)
+- Add offline regression coverage for IMDb GraphQL requests, pagination, title types, and upstream errors (cc74751)
+- docs(agents): Define commit and planning conventions (bf6fc2e)
+
+### Fixed
+- fix(Collector/IMDb): Fetch IMDb collections via GraphQL (cc74751)
+  - Replace HTML scraping to avoid IMDb WAF challenge pages.
+  - Fetch chart metadata and all collection pages while preserving IMDb IDs and item order.
+  - Report upstream failures and invalid or incomplete pagination instead of returning partial collections.
+
 ## v0.9.2.0 - 2026-10-13
 
 ### Added
@@ -265,4 +279,3 @@ All notable changes to this project are documented in this file. This file was g
 
 ### Fixed
 - fix: Miss DayOfWeek in the default trigger (c2d2d79)
-

@@ -1,113 +1,112 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
-using Emby.Plugins.InternetDbCollections.Utils;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class ImdbChartCollector(string chartId, ILogger logger, HttpClient? httpClient = null) : ICollector
 {
-    private static readonly string s_titleBeginTag = "<title>";
-    private static readonly string s_titleEndTag = "</title>";
-    private static readonly string s_descriptionBeginTag = "<meta name=\"description\" content=\"";
-    private static readonly string s_descriptionEndTag = "\" data-id=\"main\"/>";
-    private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
-    private static readonly string s_jsonDataEndTag = "</script>";
-    private readonly HttpClient _httpClient = httpClient ?? HttpClientPool.Instance.GetClient("imdb", client =>
-    {
-        client.BaseAddress = new Uri("https://www.imdb.com");
-    });
+    private const string Query = """
+        query InternetDbCollectionsChart(
+            $chart: ChartTitleOptions!,
+            $rankingsChartType: TitleChartRankingsType!,
+            $first: Int!,
+            $after: String,
+            $includeMetadata: Boolean!
+        ) {
+            chartTitles(chart: $chart, first: $first, after: $after) {
+                total
+                edges {
+                    node {
+                        id
+                        titleType { id }
+                    }
+                }
+                pageInfo { hasNextPage endCursor }
+            }
+            titleChartRankings(first: 1, input: { rankingsChartType: $rankingsChartType })
+                @include(if: $includeMetadata) {
+                metadata {
+                    chartName { value }
+                    chartDescription { value }
+                }
+            }
+        }
+        """;
+
+    private readonly ImdbGraphQlClient _client = new(httpClient);
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        // TODO:
-        // 1. retry
-        // 2. proxy
-        logger.Debug("Fetching IMDb chart '{0}' data", chartId);
-        var response = await _httpClient.GetStringAsync($"/chart/{chartId}/", cancellationToken: cancellationToken);
-        logger.Debug("Received IMDb chart '{0}' data, parsing...", chartId);
+        (string chartType, string rankingsChartType) = chartId switch
+        {
+            "top" => ("TOP_RATED_MOVIES", "TOP_250"),
+            "toptv" => ("TOP_RATED_TV_SHOWS", "TOP_250_TV"),
+            "bottom" => ("LOWEST_RATED_MOVIES", "BOTTOM_100"),
+            "top-english-movies" => ("TOP_RATED_ENGLISH_MOVIES", "TOP_250_ENGLISH"),
+            "top-rated-indian-movies" => ("TOP_RATED_INDIAN_MOVIES", "TOP_250_INDIA"),
+            _ => throw new NotSupportedException($"Unsupported IMDb chart '{chartId}'."),
+        };
 
-        // Hope we can use third-party libraries to parse HTML in Emby plugin one day.
-        var titleStartIdx = response.IndexOf(s_titleBeginTag) + s_titleBeginTag.Length;
-        var titleEndIdx = response.IndexOf(s_titleEndTag, titleStartIdx);
-        var name = response[titleStartIdx..titleEndIdx].Trim();
-        logger.Info("Parsed IMDb chart '{0}' name: {1}", chartId, name);
-
-        var descriptionStartIdx = response.IndexOf(s_descriptionBeginTag) + s_descriptionBeginTag.Length;
-        var descriptionEndIdx = response.IndexOf(s_descriptionEndTag, descriptionStartIdx);
-        var description = response[descriptionStartIdx..descriptionEndIdx].Trim();
-        logger.Info("Parsed IMDb chart '{0}' description: {1}", chartId, description);
-
-        var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;
-        var dataEndIdx = response.IndexOf(s_jsonDataEndTag, dataStartIdx);
-        var jsonData = response[dataStartIdx..dataEndIdx];
-        var jsonObject = JsonNode.Parse(jsonData) ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' JSON data.");
-        // TODO: better error handling
-        var pageData = jsonObject["props"]?["pageProps"]?["pageData"]?.AsObject()
-            ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' page data.");
-        var firstPage = pageData.FirstOrDefault();
-        var items = firstPage.Value?["edges"]?.AsArray()
-            ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' items.");
-        var collectionItems = items
-            .Select((item, idx) => new CollectionItem
-            {
-                Order = idx + 1,
-                Ids =
+        logger.Debug("Fetching IMDb chart '{0}' via GraphQL", chartId);
+        var collectionItems = new List<CollectionItem>();
+        var cursors = new HashSet<string>(StringComparer.Ordinal);
+        string? cursor = null;
+        string? name = null;
+        string? description = null;
+        do
+        {
+            JsonObject data = await _client.QueryAsync(
+                Query,
+                new
                 {
-                    { "imdb", GetImdbId(item) },
+                    chart = new { chartType },
+                    rankingsChartType,
+                    first = 250,
+                    after = cursor,
+                    includeMetadata = cursor is null,
                 },
-                Type = GetItemType(item),
-            })
-            .ToList();
+                cancellationToken);
+            if (cursor is null)
+            {
+                JsonObject metadata = data["titleChartRankings"]?["metadata"]?.AsObject()
+                    ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' metadata.");
+                name = metadata["chartName"]?["value"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' name.");
+                }
+                description = metadata["chartDescription"]?["value"]?.GetValue<string>()
+                    ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' description.");
+            }
+            JsonObject connection = data["chartTitles"]?.AsObject()
+                ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' data.");
+            JsonArray edges = connection["edges"]?.AsArray()
+                ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' items.");
+            foreach (JsonNode? edge in edges)
+            {
+                collectionItems.Add(ImdbGraphQlClient.ParseItem(edge?["node"], collectionItems.Count + 1));
+            }
+            cursor = ImdbGraphQlClient.GetNextCursor(connection, collectionItems.Count, cursors);
+        }
+        while (cursor != null);
+
         logger.Info("Parsed IMDb chart '{0}' items: {1} items", chartId, collectionItems.Count);
 
         return new CollectionItemList
         {
-            Name = name,
+            Name = name ?? throw new InvalidOperationException($"Failed to parse IMDb chart '{chartId}' name."),
             Description = description,
             Ids =
             {
                 { CollectorType.ImdbChart.ToProviderName(), chartId },
             },
             Items = collectionItems,
-        };
-    }
-
-    private string GetImdbId(JsonNode? item)
-    {
-        if (item is null)
-        {
-            throw new InvalidOperationException($"Can't parse IMDb ID for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
-        }
-        return item?["node"]?["id"]?.ToString() ??
-            item?["node"]?["release"]?["titles"]?.AsArray()?.FirstOrDefault()?["id"]?.ToString() ??
-            throw new NotSupportedException($"Can't parse IMDb ID for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
-    }
-
-    private string GetItemType(JsonNode? item)
-    {
-        if (item is null)
-        {
-            throw new InvalidOperationException($"Can't parse item type for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
-        }
-        var type = item?["node"]?["titleType"]?["id"]?.ToString();
-        if (string.IsNullOrEmpty(type))
-        {
-            throw new NotSupportedException($"Can't parse item type for chart {chartId}. Please open an issue on GitHub and provide the chart ID.");
-        }
-        return type switch
-        {
-            "movie" => nameof(Movie),
-            "tvSeries" => nameof(Series),
-            "tvMiniSeries" => nameof(Series),
-            _ => throw new NotSupportedException($"Unknown item type '{type}' for chart {chartId}. Please open an issue on GitHub and provide the chart ID."),
         };
     }
 }

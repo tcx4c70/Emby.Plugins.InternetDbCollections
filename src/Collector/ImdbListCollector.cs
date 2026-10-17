@@ -1,84 +1,91 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugins.InternetDbCollections.Models.Collection;
-using Emby.Plugins.InternetDbCollections.Utils;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.InternetDbCollections.Collector;
 
 class ImdbListCollector(string listId, ILogger logger, HttpClient? httpClient = null) : ICollector
 {
-    private static readonly string s_jsonDataBeginTag = "<script id=\"__NEXT_DATA__\" type=\"application/json\">";
-    private static readonly string s_jsonDataEndTag = "</script>";
-    private readonly HttpClient _httpClient = httpClient ?? HttpClientPool.Instance.GetClient("imdb", client =>
-    {
-        client.BaseAddress = new Uri("https://www.imdb.com");
-    });
+    private const string Query = """
+        query InternetDbCollectionsList($id: ID!, $first: Int!, $after: String) {
+            list(id: $id) {
+                name { originalText }
+                description { originalText { plainText } }
+                titleListItemSearch(
+                    first: $first,
+                    after: $after,
+                    sort: { by: LIST_ORDER, order: ASC }
+                ) {
+                    total
+                    edges {
+                        node { absolutePosition }
+                        title {
+                            id
+                            titleType { id }
+                        }
+                    }
+                    pageInfo { hasNextPage endCursor }
+                }
+            }
+        }
+        """;
+
+    private readonly ImdbGraphQlClient _client = new(httpClient);
 
     public async Task<CollectionItemList> CollectAsync(CancellationToken cancellationToken = default)
     {
-        logger.Debug("Fetching IMDb list '{0}' data", listId);
-        var response = await _httpClient.GetStringAsync($"/list/{listId}/", cancellationToken: cancellationToken);
-        logger.Debug("Received IMDb list '{0}' data, parsing...", listId);
-
-        var dataStartIdx = response.IndexOf(s_jsonDataBeginTag) + s_jsonDataBeginTag.Length;
-        var dataEndIdx = response.IndexOf(s_jsonDataEndTag, dataStartIdx);
-        var jsonData = response[dataStartIdx..dataEndIdx];
-        var jsonObject = JsonNode.Parse(jsonData) ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' JSON data.");
-
-        var name = jsonObject["props"]?["pageProps"]?["mainColumnData"]?["list"]?["name"]?["originalText"]?.ToString()
-            ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' name.");
-        logger.Info("Parsed IMDb list name: {0}", name);
-
-        var description = jsonObject["props"]?["pageProps"]?["mainColumnData"]?["list"]?["description"]?["originalText"]?["plainText"]?.ToString()
-            ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' description.");
-        logger.Info("Parsed IMDb list description: {0}", description);
-
-        var items = jsonObject["props"]?["pageProps"]?["mainColumnData"]?["list"]?["titleListItemSearch"]?["edges"]?.AsArray()
-            ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' items.");
-        var collectionItems = items
-            .Select((item, idx) => new CollectionItem
+        logger.Debug("Fetching IMDb list '{0}' via GraphQL", listId);
+        var collectionItems = new List<CollectionItem>();
+        var cursors = new HashSet<string>(StringComparer.Ordinal);
+        string? cursor = null;
+        string? name = null;
+        string? description = null;
+        do
+        {
+            JsonObject data = await _client.QueryAsync(
+                Query, new { id = listId, first = 100, after = cursor }, cancellationToken);
+            JsonObject list = data["list"]?.AsObject()
+                ?? throw new InvalidOperationException($"IMDb list '{listId}' was not found or is not public.");
+            if (name is null)
             {
-                Order = idx + 1,
-                Ids =
+                name = list["name"]?["originalText"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(name))
                 {
-                    { "imdb", item?["listItem"]?["id"]?.ToString() ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' item ID.") },
-                },
-                Type = GetItemType(item),
-            })
-            .ToList();
-        logger.Info("Parsed IMDb list '{0}' items: {1} items", listId, items.Count);
+                    throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' name.");
+                }
+                description = list["description"]?["originalText"]?["plainText"]?.GetValue<string>();
+            }
+
+            JsonObject connection = list["titleListItemSearch"]?.AsObject()
+                ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' items.");
+            JsonArray edges = connection["edges"]?.AsArray()
+                ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' items.");
+            foreach (JsonNode? edge in edges)
+            {
+                int position = edge?["node"]?["absolutePosition"]?.GetValue<int>()
+                    ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' item position.");
+                collectionItems.Add(ImdbGraphQlClient.ParseItem(edge?["title"], position));
+            }
+            cursor = ImdbGraphQlClient.GetNextCursor(connection, collectionItems.Count, cursors);
+        }
+        while (cursor != null);
+
+        logger.Info("Parsed IMDb list name: {0}", name);
+        logger.Info("Parsed IMDb list '{0}' items: {1} items", listId, collectionItems.Count);
         return new CollectionItemList
         {
-            Name = name,
+            Name = name ?? throw new InvalidOperationException($"Failed to parse IMDb list '{listId}' name."),
             Description = description,
             Ids =
             {
                 { CollectorType.ImdbList.ToProviderName(), listId },
             },
             Items = collectionItems,
-        };
-    }
-
-    private string GetItemType(JsonNode item)
-    {
-        var type = item?["listItem"]?["titleType"]?["id"]?.ToString();
-        if (string.IsNullOrEmpty(type))
-        {
-            throw new NotSupportedException($"Can't parse item type for chart {listId}. Please open an issue on GitHub and provide the chart ID.");
-        }
-        return type switch
-        {
-            "movie" => nameof(Movie),
-            "tvSeries" => nameof(Series),
-            "tvMiniSeries" => nameof(Series),
-            _ => throw new NotSupportedException($"Unknown item type '{type}' for chart {listId}. Please open an issue on GitHub and provide the chart ID."),
         };
     }
 }

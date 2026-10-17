@@ -43,6 +43,26 @@ Access the collections in your Emby library, and use the plugin's configuration 
 
 You can configure the plugin through the Emby web interface under the plugins section. Here you can enable or disable specific data sources, and customize collection behavior.
 
+### IMDb charts
+
+Select `IMDb Chart` as the collector type and use one of the supported chart IDs below.
+
+| Chart ID | Chart |
+| --- | --- |
+| `top` | [IMDb Top 250 Movies](https://www.imdb.com/chart/top/) |
+| `toptv` | [Top Rated TV Shows](https://www.imdb.com/chart/toptv/) |
+| `bottom` | [Lowest Rated Movies](https://www.imdb.com/chart/bottom/) |
+| `top-english-movies` | [Top Rated English Movies](https://www.imdb.com/chart/top-english-movies/) |
+| `top-rated-indian-movies` | [Top Rated Indian Movies](https://www.imdb.com/chart/top-rated-indian-movies/) |
+
+### IMDb lists
+
+Select `IMDb List` as the collector type. Public lists containing movies, TV series, and TV mini-series
+are supported. Use the `ls...` ID from the list URL.
+
+For example, [Top 100 Greatest Movies of All Time (The Ultimate List)](https://www.imdb.com/list/ls055592025/)
+uses the collector ID `ls055592025`. Private lists are not supported.
+
 ## TODO
 
 - Other datasource, such as:
